@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parrot Escape: Bomb Survival Edition</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
-    <!-- Supabase Library -->
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -66,6 +66,7 @@
         .reward { font-size: 2rem; filter: grayscale(1); transition: 0.3s; }
         .reward.unlocked { filter: grayscale(0); transform: scale(1.2); }
 
+        .health-bar-container { position: absolute; bottom: 20px; left: 15px; z-index: 300; background: rgba(0,0,0,0.6); border-radius: 10px; padding: 5px 10px; font-size: 0.8rem; color: #fff; }
         .progress-container { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 200px; height: 10px; background: rgba(0,0,0,0.5); border-radius: 5px; border: 1px solid #4dffea; z-index: 300; overflow: hidden; }
         #progressBar { width: 0%; height: 100%; background: #4dffea; transition: width 0.3s; }
 
@@ -75,27 +76,30 @@
             text-align: center; border: 3px solid #ff3d00; z-index: 400; display: none; width: 85%;
         }
 
+        .controls-hint { margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; font-size: 0.85rem; }
+        
         #leaderboardContainer {
             display: none; margin-top: 15px; background: rgba(0,0,0,0.7);
             padding: 10px; border-radius: 10px; border: 1px solid #ff3d00;
             max-height: 180px; overflow-y: auto; text-align: left;
         }
-        .score-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,61,0,0.1); font-size: 0.85rem; }
+        .score-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,61,0,0.1); font-size: 0.85rem; }
         .score-name { color: #ff9a00; font-weight: bold; }
+        .score-val { color: #4dffea; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🐦 Parrot Escape 💣</h1>
-            <p class="subtitle">Avoid the bombs! One hit and it's over!</p>
+            <p class="subtitle">Avoid the bombs and reach the nest!</p>
         </header>
 
         <div class="game-area">
             <div class="left-panel">
                 <h2>🦜 Parrot Profile</h2>
                 <div class="profile-form">
-                    <input type="text" id="playerNameInput" placeholder="Enter parrot name" maxlength="15">
+                    <input type="text" id="playerNameInput" placeholder="Parrot Name" maxlength="15">
                     <input type="text" id="parrotColorInput" placeholder="Color (e.g. green)">
                     <button id="saveProfile">Save Profile</button>
                     <button id="loadProfile">Load Progress</button>
@@ -111,8 +115,9 @@
                     <div class="reward" id="reward3">🥇</div><div class="reward" id="reward4">🏆</div>
                     <div class="reward" id="reward5">👑</div>
                 </div>
-                <div style="margin-top:15px; padding:10px; background:rgba(0,0,0,0.3); border-radius:10px; font-size:0.85rem;">
-                    ⌨️ Use Arrows or WASD<br>Space: Super Jump<br><b style="color:#ff3d00;">⚠️ Danger: Bombs are instant kill!</b>
+                <div class="controls-hint">
+                    <p>⌨️ WASD or Arrows to fly</p>
+                    <p>Space: Super Jump | <b style="color:#ff3d00;">💣 Hit = Death</b></p>
                 </div>
             </div>
 
@@ -122,10 +127,10 @@
                     <div class="progress-container"><div id="progressBar"></div></div>
                     <div class="music-control" id="musicToggle">🔊</div>
                     <canvas id="gameCanvas" width="800" height="400"></canvas>
+                    <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
                     <div class="game-message" id="startMessage">
                         <h2 style="font-size:2.5rem; color:#ff9a00;">Ready to Fly? 🦜</h2>
-                        <p>Avoid the <b>Bombs</b> and reach the <b>Nest 🪺</b>!</p>
                         <button id="startButton" style="padding:15px 40px; font-size:1.5rem;">START GAME</button>
                         <br>
                         <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; margin-top:15px; font-size:0.8rem; cursor:pointer;">🏆 Global Leaderboard</button>
@@ -133,9 +138,7 @@
                     </div>
 
                     <div class="game-message" id="gameOverMessage">
-                        <h2 style="color:#ff3d00;">BOOM! 💥</h2>
-                        <p id="gameOverText"></p>
-                        <button id="restartButton">Try Again</button>
+                        <h2 style="color:#ff3d00;">GAME OVER 💥</h2><p id="gameOverText"></p><button id="restartButton">Try Again</button>
                     </div>
                     <div class="game-message" id="levelCompleteMessage">
                         <h2>Safe at Home! 🪺</h2><p id="levelCompleteText"></p><button id="nextLevelButton">Next Level →</button>
@@ -172,7 +175,7 @@
             return {
                 init, 
                 playJump: () => playTone(300, 0.15),
-                playExplosion: () => { playTone(100, 0.5, 'sawtooth', sfxGain, 0.5); playTone(60, 0.6, 'sawtooth', sfxGain, 0.4, 0.05); },
+                playHit: () => playTone(150, 0.3, 'sawtooth'),
                 playCollect: () => { playTone(600, 0.1); playTone(900, 0.1, 'sine', null, 0.2, 0.05); },
                 startMusic: () => { init(); AudioEngine.stopMusic(); bgmPlaying = true; bgmInterval = setInterval(() => { if(bgmPlaying) playTone([262, 330, 392, 523][Math.floor(Math.random()*4)], 0.5, 'triangle', musicGain, 0.1); }, 500); },
                 stopMusic: () => { bgmPlaying = false; clearInterval(bgmInterval); }
@@ -180,18 +183,24 @@
         })();
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // 2. HIGH-FIDELITY GRAPHICS (BOMB RESTORED)
+        // 2. HIGH-FIDELITY GRAPHICS & 10 LEVELS
         // ═══════════════════════════════════════════════════════════════════════════
         const levels = [
             { name: "Jungle", bg: ["#1e4d2b","#2a6b3c"], bombSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿","🐒"], targetDist: 1000 },
-            { name: "Desert", bg: ["#7a5c28","#c4892d"], bombSpeed: 3.5, mushroomRate: 1400, env: ["🌵","🏜️","🐪"], targetDist: 1500 },
-            { name: "Mountains", bg: ["#3c4a5c","#5a7090"], bombSpeed: 4.2, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"], targetDist: 2000 },
-            { name: "Sky", bg: ["#1a3a6a","#2a5aaa"], bombSpeed: 7.5, mushroomRate: 600, env: ["☁️","🌈","🦅"], targetDist: 4000 }
+            { name: "Desert", bg: ["#7a5c28","#c4892d"], bombSpeed: 3.3, mushroomRate: 1400, env: ["🌵","🏜️","🐪"], targetDist: 1500 },
+            { name: "Mountains", bg: ["#3c4a5c","#5a7090"], bombSpeed: 3.8, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"], targetDist: 2000 },
+            { name: "Forest", bg: ["#1a3320","#2d5c38"], bombSpeed: 4.3, mushroomRate: 1200, env: ["🌲","🍂","🦌"], targetDist: 2500 },
+            { name: "Swamp", bg: ["#2a3d20","#4a6b33"], bombSpeed: 4.8, mushroomRate: 1100, env: ["🐊","🪵"], targetDist: 3000 },
+            { name: "Cave", bg: ["#1a1a2e","#2a2a4e"], bombSpeed: 5.3, mushroomRate: 1000, env: ["🪨","🦇","💎"], targetDist: 3500 },
+            { name: "Beach", bg: ["#1a6b8a","#2a9bc4"], bombSpeed: 5.8, mushroomRate: 900, env: ["🏖️","🐚","🌊"], targetDist: 4000 },
+            { name: "Snow", bg: ["#3a5a7a","#5a8aaa"], bombSpeed: 6.3, mushroomRate: 800, env: ["❄️","🐻"], targetDist: 4500 },
+            { name: "Volcano", bg: ["#5c1a0a","#8b2a12"], bombSpeed: 6.8, mushroomRate: 700, env: ["🌋","🔥"], targetDist: 5000 },
+            { name: "Sky", bg: ["#1a3a6a","#2a5aaa"], bombSpeed: 7.5, mushroomRate: 600, env: ["☁️","🌈","🦅"], targetDist: 6000 }
         ];
 
         let state = { currentLevel: 1, score: 0, mushrooms: 0, lives: 3, isPlaying: false, keys: {}, playerName: "Parrot", parrotColor: "#4CAF50", distance: 0, lastMushroomTime: Date.now() };
         let parrot = { x: 80, y: 310, width: 40, height: 35, vY: 0, jumping: false, wingAnim: 0 };
-        let bomb = { x: 850, y: 310, width: 40, height: 40, speed: 3 };
+        let bomb = { x: 850, y: 310, speed: 3 };
         let nest = { x: 1000, y: 310, active: false };
         let mushroomsList = [], environments = [], obstacles = [], spawnTimer;
 
@@ -209,27 +218,13 @@
             parrot.wingAnim += 0.2; ctx.restore();
         }
 
-        // ПЪЛНА НОВА ГРАФИКА ЗА БОМБАТА
         function drawBomb() {
             ctx.save();
-            // Бомба - тяло
-            ctx.fillStyle = '#222';
-            ctx.beginPath(); ctx.arc(bomb.x + 20, bomb.y + 20, 18, 0, Math.PI * 2); ctx.fill();
-            // Блясък върху бомбата
-            ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.beginPath(); ctx.arc(bomb.x + 14, bomb.y + 14, 5, 0, Math.PI * 2); ctx.fill();
-            // Гърло на бомбата
-            ctx.fillStyle = '#444';
-            ctx.fillRect(bomb.x + 15, bomb.y, 10, 5);
-            // Фитил
-            ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(bomb.x + 20, bomb.y); ctx.quadraticCurveTo(bomb.x + 25, bomb.y - 10, bomb.x + 30, bomb.y - 5); ctx.stroke();
-            // Искра на фитила
-            const sparkSize = 3 + Math.random() * 4;
-            ctx.fillStyle = '#ff9a00';
-            ctx.beginPath(); ctx.arc(bomb.x + 30, bomb.y - 5, sparkSize, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(bomb.x + 30, bomb.y - 5, sparkSize/2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(bomb.x + 20, bomb.y + 20, 18, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.arc(bomb.x + 14, bomb.y + 14, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#444'; ctx.fillRect(bomb.x + 15, bomb.y, 10, 5);
+            ctx.strokeStyle = '#888'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bomb.x + 20, bomb.y); ctx.quadraticCurveTo(bomb.x + 25, bomb.y - 10, bomb.x + 30, bomb.y - 5); ctx.stroke();
+            const sparkSize = 3 + Math.random() * 4; ctx.fillStyle = '#ff9a00'; ctx.beginPath(); ctx.arc(bomb.x + 30, bomb.y - 5, sparkSize, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
 
@@ -252,6 +247,7 @@
                 } else {
                     ctx.fillStyle = '#6D4C41'; ctx.fillRect(o.x, o.y+6, 40, 26);
                     ctx.fillStyle = '#8D6E63'; ctx.fillRect(o.x+4, o.y+10, 32, 18);
+                    ctx.fillStyle = '#5D4037'; ctx.beginPath(); ctx.arc(o.x+20, o.y+19, 8, 0, Math.PI*2); ctx.stroke();
                 }
                 ctx.restore();
             });
@@ -266,7 +262,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // 3. ENGINE LOGIC (INSTANT KILL BOMB)
+        // 3. ENGINE & SAFE COLLISIONS
         // ═══════════════════════════════════════════════════════════════════════════
         function update() {
             if(!state.isPlaying) return;
@@ -278,10 +274,7 @@
             if(state.keys['KeyA'] || state.keys['ArrowLeft']) parrot.x = Math.max(0, parrot.x - 5);
             if(state.keys['KeyD'] || state.keys['ArrowRight']) parrot.x = Math.min(760, parrot.x + 5);
             if(state.keys['KeyS'] || state.keys['ArrowDown']) parrot.y = Math.min(330, parrot.y + 7);
-            
-            if((state.keys['KeyW'] || state.keys['ArrowUp'] || state.keys['Space']) && !parrot.jumping) { 
-                parrot.vY = (state.keys['Space']) ? -14 : -11; parrot.jumping = true; AudioEngine.playJump(); 
-            }
+            if((state.keys['KeyW'] || state.keys['ArrowUp'] || state.keys['Space']) && !parrot.jumping) { parrot.vY = (state.keys['Space']) ? -14 : -11; parrot.jumping = true; AudioEngine.playJump(); }
 
             const lvl = levels[state.currentLevel-1];
             state.distance++;
@@ -293,27 +286,26 @@
                 if(Math.abs(parrot.x - nest.x) < 40 && Math.abs(parrot.y - 310) < 50) completeLevel();
             }
 
-            // Бомба логика - Преследване
+            // BOMB -> INSTANT DEATH
             bomb.x -= lvl.bombSpeed; if(bomb.x < -150) { bomb.x = 850; bomb.y = 100+Math.random()*200; }
-            // Вертикално следене на папагала
-            if(bomb.y < parrot.y) bomb.y += 0.5; else bomb.y -= 0.5;
+            if(Math.abs(parrot.x - bomb.x) < 35 && Math.abs(parrot.y - bomb.y) < 30) { gameOver("Explosion! 💥"); return; }
 
-            // КРИТИЧЕН СБЛЪСЪК С БОМБА -> GAME OVER
-            if(Math.abs(parrot.x - bomb.x) < 35 && Math.abs(parrot.y - bomb.y) < 30) { 
-                AudioEngine.playExplosion();
-                gameOver("Killed by a Bomb! 💥"); 
-                return;
+            // MUSHROOMS
+            for (let i = mushroomsList.length - 1; i >= 0; i--) {
+                let m = mushroomsList[i]; m.x -= 3;
+                if(Math.abs(parrot.x - m.x) < 35 && Math.abs(parrot.y - m.y) < 35) { state.score += 50; state.mushrooms++; mushroomsList.splice(i,1); AudioEngine.playCollect(); }
+                else if(m.x < -50) mushroomsList.splice(i,1);
             }
 
-            // Гъби
-            mushroomsList.forEach((m, i) => { 
-                m.x -= 3; if(Math.abs(parrot.x - m.x) < 35 && Math.abs(parrot.y - m.y) < 35) { state.score += 50; state.mushrooms++; mushroomsList.splice(i,1); AudioEngine.playCollect(); }
-            });
-
-            // Препятствия
-            obstacles.forEach((o, i) => {
-                o.x -= 4; if(Math.abs(parrot.x - o.x) < 35 && Math.abs(parrot.y - o.y) < 35) { state.score = Math.max(0, state.score - 50); obstacles.splice(i,1); AudioEngine.playHit(); }
-            });
+            // OBSTACLES (LOGS/ROCKS) -> PENALTY
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let o = obstacles[i]; o.x -= 4;
+                if(Math.abs(parrot.x - o.x) < 35 && Math.abs(parrot.y - o.y) < 35) { 
+                    state.score = Math.max(0, state.score - 50); 
+                    obstacles.splice(i,1); 
+                    AudioEngine.playHit(); 
+                } else if(o.x < -50) obstacles.splice(i,1);
+            }
 
             drawObstacles(); drawMushrooms(); drawBomb(); drawParrot();
             updateHUD(); requestAnimationFrame(update);
@@ -322,13 +314,14 @@
         function updateHUD() {
             document.getElementById('currentScore').innerText = state.score;
             document.getElementById('mushroomCount').innerText = state.mushrooms;
+            document.getElementById('livesDisplay').innerText = state.lives;
             document.getElementById('currentLevel').innerText = state.currentLevel;
             document.getElementById('levelIndicator').innerText = `Level ${state.currentLevel}: ${levels[state.currentLevel-1].name}`;
         }
 
         function startGame() {
             AudioEngine.init(); AudioEngine.startMusic();
-            state.isPlaying = true; state.score = 0; state.lives = 3; state.mushrooms = 0; state.distance = 0;
+            state.isPlaying = true; state.score = 0; state.mushrooms = 0; state.distance = 0;
             parrot.x = 100; parrot.y = 300; nest.active = false; mushroomsList = []; environments = []; obstacles = [];
             const lvl = levels[state.currentLevel - 1];
             for(let i=0; i<12; i++) environments.push({ x: Math.random()*800, y: Math.random()*50, t: lvl.env[Math.floor(Math.random()*lvl.env.length)] });
@@ -340,7 +333,7 @@
         }
 
         function gameOver(reason) {
-            state.isPlaying = false; AudioEngine.stopMusic();
+            state.isPlaying = false; AudioEngine.stopMusic(); AudioEngine.playHit();
             document.getElementById('gameOverMessage').style.display = 'block';
             document.getElementById('gameOverText').innerText = (reason || "Caught!") + ` Final Score: ${state.score}`;
             saveToLeaderboard(state.playerName, state.score, state.currentLevel);
@@ -349,7 +342,7 @@
         function completeLevel() {
             state.isPlaying = false; AudioEngine.stopMusic();
             if(state.currentLevel >= 10) document.getElementById('winMessage').style.display = 'block';
-            else { document.getElementById('levelCompleteMessage').style.display = 'block'; document.getElementById('levelCompleteText').innerText = `Region ${state.currentLevel} cleared!`; }
+            else { document.getElementById('levelCompleteMessage').style.display = 'block'; document.getElementById('levelCompleteText').innerText = `Region ${state.currentLevel} escaped!`; }
         }
 
         function shadeColor(color, percent) {
@@ -357,7 +350,7 @@
             return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
         }
 
-        // ── Events ──
+        // ── UI Events ──
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('restartButton').addEventListener('click', () => location.reload());
         document.getElementById('nextLevelButton').addEventListener('click', () => { state.currentLevel++; startGame(); });
@@ -365,13 +358,9 @@
             const list = document.getElementById('leaderboardList');
             document.getElementById('leaderboardContainer').style.display = 'block';
             const scores = await getTopScores();
-            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('');
+            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('') || "No scores yet.";
         });
-
-        document.getElementById('saveProfile').addEventListener('click', () => {
-            state.playerName = document.getElementById('playerNameInput').value || "Parrot";
-            alert("Profile Ready! 🦜");
-        });
+        document.getElementById('saveProfile').addEventListener('click', () => { state.playerName = document.getElementById('playerNameInput').value || "Parrot"; alert("Synced!"); });
 
         window.addEventListener('keydown', e => { 
             state.keys[e.code] = true; 
