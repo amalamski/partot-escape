@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parrot Escape: Run from the Snake!</title>
-    <!-- Supabase Library -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
+    <!-- Библиотеки -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ВРЪЩАМ ЦЕЛИЯ ОРИГИНАЛЕН СТИЛ */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Comic Sans MS', 'Chalkboard SE', cursive; user-select: none; }
         body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-x: hidden; }
         .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
@@ -29,20 +29,15 @@
         .key { display: inline-block; width: 50px; height: 50px; background: #333; color: white; border-radius: 8px; text-align: center; line-height: 50px; margin: 5px; font-weight: bold; border: 2px solid #666; box-shadow: 0 4px 0 #222; }
         .key.active { background: #ff9a00; transform: translateY(4px); box-shadow: 0 0 0 #222; }
         .music-control { position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; z-index: 300; }
-        .volume-slider-container { position: absolute; top: 55px; right: 10px; background: rgba(0, 0, 0, 0.8); padding: 8px 12px; border-radius: 10px; z-index: 300; display: none; flex-direction: column; gap: 6px; font-size: 0.75rem; color: #4dffea; border: 1px solid #00b4d8; }
-        .volume-slider-container.show { display: flex; }
         .level-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.7); padding: 10px 20px; border-radius: 20px; font-weight: bold; color: #ff9a00; z-index: 300; }
         .rewards { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; justify-content: center; }
         .reward { font-size: 2rem; filter: grayscale(1); transition: all 0.3s; }
         .reward.unlocked { filter: grayscale(0); transform: scale(1.2); }
-        .game-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); padding: 30px; border-radius: 20px; text-align: center; border: 3px solid #ff9a00; z-index: 200; display: none; width: 80%; }
+        .game-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); padding: 30px; border-radius: 20px; text-align: center; border: 3px solid #ff9a00; z-index: 200; display: none; width: 85%; }
         .health-bar-container { position: absolute; bottom: 20px; left: 15px; z-index: 300; background: rgba(0,0,0,0.6); border-radius: 10px; padding: 5px 10px; font-size: 0.8rem; color: #fff; }
-        
-        /* Leaderboard Styles */
-        .leaderboard-btn { background: transparent; border: 1px solid #4dffea; color: #4dffea; font-size: 0.9rem; margin-top: 10px; }
-        .leaderboard-wrap { display: none; margin-top: 15px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; border: 1px solid #ff9a00; max-height: 150px; overflow-y: auto; text-align: left; }
-        .score-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(77,255,234,0.1); padding: 4px 0; font-size: 0.8rem; }
-        .score-name { color: #ff9a00; font-weight: bold; }
+        /* Leaderboard UI */
+        #leaderboardContainer { display: none; margin-top: 15px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; border: 1px solid #ff9a00; max-height: 150px; overflow-y: auto; }
+        .score-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(77,255,234,0.1); font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -60,7 +55,6 @@
                         <input type="text" id="playerName" placeholder="Enter parrot name" maxlength="15">
                         <input type="text" id="parrotColor" placeholder="Favorite color (e.g., green)" maxlength="10">
                         <button id="saveProfile">Save Profile</button>
-                        <button id="loadProfile">Load Progress</button>
                     </div>
                     <div class="stats">
                         <div class="stat-box"><div>Level</div><div class="stat-value" id="currentLevel">1</div></div>
@@ -69,23 +63,13 @@
                         <div class="stat-box"><div>Time Bonus</div><div class="stat-value" id="timeBonus">1.0x</div></div>
                     </div>
                 </div>
-
                 <div class="rewards-section">
                     <h2>🏆 Rewards</h2>
                     <div class="rewards">
                         <div class="reward" id="reward1">🥉</div>
                         <div class="reward" id="reward2">🥈</div>
                         <div class="reward" id="reward3">🥇</div>
-                        <div class="reward" id="reward4">🏆</div>
-                        <div class="reward" id="reward5">👑</div>
                     </div>
-                </div>
-
-                <div class="controls">
-                    <h2>🎮 Controls</h2>
-                    <div style="margin-bottom:6px;"><span class="key" id="keyW">W</span> Jump</div>
-                    <div style="margin-bottom:6px;"><span class="key" id="keyA">A</span> <span class="key" id="keyS">S</span> <span class="key" id="keyD">D</span> Move</div>
-                    <div style="margin-bottom:6px;"><span class="key" id="keySpace" style="width:80px;">SPACE</span> Super Jump</div>
                 </div>
             </div>
 
@@ -93,207 +77,166 @@
                 <div class="screen">
                     <div class="level-indicator" id="levelIndicator">Level 1: Jungle 🌴</div>
                     <div class="music-control" id="musicToggle">🔊</div>
-                    <div class="volume-slider-container" id="volumePanel">
-                        <label>🎵 Music <input type="range" id="musicVolume" min="0" max="100" value="40"></label>
-                        <label>🔊 SFX <input type="range" id="sfxVolume" min="0" max="100" value="60"></label>
-                    </div>
-
                     <canvas id="gameCanvas" width="800" height="400"></canvas>
-
                     <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
                     <div class="game-message" id="startMessage">
                         <h2>Ready to Fly? 🦜</h2>
-                        <p>Escape the snake, collect mushrooms!</p>
                         <button id="startButton">START GAME</button>
-                        <br>
-                        <button id="showLeaderboardBtn" class="leaderboard-btn">🏆 Класация (Топ 10)</button>
-                        <div id="leaderboardContainer" class="leaderboard-wrap">
-                            <div id="leaderboardList">Зареждане...</div>
-                        </div>
-                    </div>
-
-                    <div class="game-message" id="levelCompleteMessage">
-                        <h2>Level Complete! 🎉</h2>
-                        <button id="nextLevelButton">Next Level →</button>
+                        <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; font-size:0.8rem; margin-top:10px;">🏆 Leaderboard</button>
+                        <div id="leaderboardContainer"><div id="leaderboardList">Loading...</div></div>
                     </div>
 
                     <div class="game-message" id="gameOverMessage">
                         <h2>Game Over! 😱</h2>
+                        <p id="gameOverText"></p>
                         <button id="restartButton">Try Again</button>
                     </div>
+                </div>
+                <div class="instructions">
+                    <h3>📜 How to Play</h3>
+                    <ul><li>Avoid the snake! 🐍</li><li>Collect mushrooms 🍄</li><li>W / Space to jump</li></ul>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // ══ SUPABASE CONFIG (SAFE) ══
+        // ══ SUPABASE & AUDIO ══
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
         let supabaseClient = null;
-        try { if (typeof supabase !== 'undefined') { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } } catch(e){}
+        try { if(typeof supabase !== 'undefined') supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
 
-        async function saveToLeaderboard(name, score, level) {
-            if (!supabaseClient || !name || score <= 0) return;
-            await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
-        }
-
-        async function getTopScores() {
-            if (!supabaseClient) return [];
-            const { data } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(10);
-            return data || [];
-        }
-
-        // ══ AUDIO ENGINE ══
         const AudioEngine = (() => {
-            let ctx = null, musicGain = null, sfxGain = null, masterGain = null, bgmPlaying = false, bgmInterval = null, muted = false;
-            function init() { if (ctx) return; ctx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = ctx.createGain(); masterGain.connect(ctx.destination); musicGain = ctx.createGain(); musicGain.gain.value = 0.4; musicGain.connect(masterGain); sfxGain = ctx.createGain(); sfxGain.gain.value = 0.6; sfxGain.connect(masterGain); }
-            function playTone(f, d, t, g, v, det, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const o = ctx.createOscillator(); const gg = ctx.createGain(); o.type = t || 'sine'; o.frequency.setValueAtTime(f, tt); gg.gain.setValueAtTime(v || 0.3, tt); gg.gain.exponentialRampToValueAtTime(0.001, tt + d); o.connect(gg); gg.connect(g || sfxGain); o.start(tt); o.stop(tt + d); }
-            function playNoise(d, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const buf = ctx.createBuffer(1, ctx.sampleRate * d, ctx.sampleRate); const dat = buf.getChannelData(0); for (let i = 0; i < dat.length; i++) dat[i] = Math.random() * 2 - 1; const src = ctx.createBufferSource(); src.buffer = buf; const gg = ctx.createGain(); gg.gain.setValueAtTime(v || 0.1, tt); gg.gain.exponentialRampToValueAtTime(0.001, tt + d); src.connect(gg); gg.connect(g || sfxGain); src.start(tt); }
-            
-            return {
-                init, 
-                setMusicVolume: (v) => musicGain.gain.value = v, 
-                setSfxVolume: (v) => sfxGain.gain.value = v,
-                playJump: () => { init(); playTone(300, 0.15); },
-                playSuperJump: () => { init(); playTone(400, 0.15, 'square'); },
-                playCollect: (val) => { init(); playTone(val >= 50 ? 800 : 500, 0.1); },
-                playSnakeHit: () => { init(); playTone(150, 0.3, 'sawtooth'); playNoise(0.2); },
-                playGameOver: () => { init(); [440, 330, 220].forEach((f, i) => playTone(f, 0.5, 'sawtooth', sfxGain, 0.2, 0, i * 0.2)); },
-                startMusic: (lvl) => { 
-                    init(); bgmPlaying = true; 
-                    const notes = [262, 330, 392, 523];
-                    bgmInterval = setInterval(() => { if(!bgmPlaying) return; playTone(notes[Math.floor(Math.random()*4)], 0.5, 'triangle', musicGain, 0.1); }, 500);
-                },
-                stopMusic: () => { bgmPlaying = false; clearInterval(bgmInterval); }
-            };
+            let ctx = null, sfx = null;
+            function init() { if(ctx) return; ctx = new (window.AudioContext || window.webkitAudioContext)(); sfx = ctx.createGain(); sfx.connect(ctx.destination); }
+            function play(freq, dur) { if(!ctx) return; const o = ctx.createOscillator(); const g = ctx.createGain(); o.frequency.setValueAtTime(freq, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur); o.connect(g); g.connect(sfx); o.start(); o.stop(ctx.currentTime + dur); }
+            return { init, jump: () => play(400, 0.2), coin: () => play(800, 0.1), hit: () => play(150, 0.3) };
         })();
 
         // ══ GAME STATE ══
-        const gameState = { currentLevel: 1, score: 0, mushroomsCollected: 0, lives: 3, playerName: "Parrot", parrotColor: "#4CAF50", isPlaying: false, keys: {}, mushroomMultiplier: 1.0, lastMushroomTime: Date.now() };
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
         const levels = [
-            { name: "Jungle", snakeSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿"] },
-            { name: "Desert", snakeSpeed: 3.5, mushroomRate: 1300, env: ["🌵","🏜️"] }
+            { name: "Jungle", snakeSpeed: 3, mushroomRate: 1500, env: ["🌴", "🌿", "🐒"] },
+            { name: "Desert", snakeSpeed: 3.5, mushroomRate: 1400, env: ["🌵", "🏜️", "🐪"] }
         ];
 
-        let parrot, snake, mushrooms = [], obstacles = [], environments = [];
-        let gameInterval, mushroomInterval;
+        let state = {
+            currentLevel: 1, score: 0, mushrooms: 0, lives: 3, isPlaying: false,
+            keys: {}, parrotColor: "#4CAF50", playerName: "Parrot",
+            parrot: { x: 100, y: 300, vY: 0, jumping: false },
+            snake: { x: 800, y: 300, speed: 3 },
+            mushroomsList: [], environments: []
+        };
 
-        function initGame() {
-            parrot = { x: 80, y: 310, w: 40, h: 35, vY: 0, jumping: false };
-            snake = { x: 850, y: 310, w: 70, h: 30, speed: levels[0].snakeSpeed };
-            document.getElementById('startMessage').style.display = 'block';
-            draw();
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ══ DRAWING FUNCTIONS (FULL VISUALS RESTORED) ══
+        function drawParrot() {
+            const p = state.parrot;
+            ctx.fillStyle = state.parrotColor;
+            ctx.beginPath(); ctx.ellipse(p.x + 20, p.y + 20, 20, 15, 0, 0, Math.PI * 2); ctx.fill(); // Body
+            ctx.fillStyle = '#FF9800'; ctx.beginPath(); ctx.moveTo(p.x+40, p.y+20); ctx.lineTo(p.x+50, p.y+20); ctx.lineTo(p.x+40, p.y+25); ctx.fill(); // Beak
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(p.x+30, p.y+15, 4, 0, Math.PI*2); ctx.fill(); // Eye
+            ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(p.x+30, p.y+15, 2, 0, Math.PI*2); ctx.fill(); // Pupil
+            ctx.fillStyle = '#2E7D32'; ctx.beginPath(); ctx.ellipse(p.x+15, p.y+25, 10, 8, Math.PI/4, 0, Math.PI*2); ctx.fill(); // Wing
         }
 
-        function startGame() {
-            document.getElementById('startMessage').style.display = 'none';
-            document.getElementById('gameOverMessage').style.display = 'none';
-            gameState.isPlaying = true; gameState.score = 0; gameState.lives = 3;
-            parrot = { x: 80, y: 310, w: 40, h: 35, vY: 0, jumping: false };
-            snake = { x: 850, y: 310, w: 70, h: 30, speed: levels[gameState.currentLevel-1].snakeSpeed };
-            mushrooms = [];
-            
-            AudioEngine.stopMusic();
-            AudioEngine.startMusic();
-            
-            clearInterval(gameInterval); clearInterval(mushroomInterval);
-            gameInterval = setInterval(update, 1000/60);
-            mushroomInterval = setInterval(spawnMushroom, 1500);
+        function drawSnake() {
+            const s = state.snake;
+            ctx.fillStyle = '#FF5722'; ctx.beginPath(); ctx.ellipse(s.x+30, s.y+15, 30, 15, 0, 0, Math.PI*2); ctx.fill(); // Body
+            ctx.fillStyle = '#D84315'; ctx.beginPath(); ctx.ellipse(s.x+50, s.y+15, 10, 15, 0, 0, Math.PI*2); ctx.fill(); // Head
+            ctx.strokeStyle = '#FF4081'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(s.x+60, s.y+15); ctx.lineTo(s.x+65, s.y+12); ctx.stroke(); // Tongue
         }
 
+        function drawMushrooms() {
+            state.mushroomsList.forEach(m => {
+                ctx.fillStyle = '#E91E63'; ctx.beginPath(); ctx.ellipse(m.x+15, m.y+10, 15, 10, 0, 0, Math.PI*2); ctx.fill(); // Cap
+                ctx.fillStyle = '#FFEB3B'; ctx.fillRect(m.x+12, m.y+10, 6, 15); // Stem
+                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x+10, m.y+8, 2, 0, Math.PI*2); ctx.fill(); // Dots
+            });
+        }
+
+        function createEnv() {
+            state.environments = [];
+            for(let i=0; i<15; i++) state.environments.push({ x: Math.random()*800, y: Math.random()*60, t: levels[state.currentLevel-1].env[0] });
+        }
+
+        function drawEnv() {
+            ctx.fillStyle = '#795548'; ctx.fillRect(0, 380, 800, 20); // Ground
+            ctx.fillStyle = '#4CAF50'; for(let i=0; i<800; i+=20) { ctx.beginPath(); ctx.moveTo(i,380); ctx.lineTo(i+10,360); ctx.lineTo(i+20,380); ctx.fill(); } // Grass
+            ctx.font = "20px Arial"; state.environments.forEach(e => ctx.fillText(e.t, e.x, e.y+25));
+        }
+
+        // ══ LOGIC ══
         function update() {
-            if(!gameState.isPlaying) return;
+            if(!state.isPlaying) return;
+            ctx.clearRect(0,0,800,400); drawEnv();
             
-            // Physics
-            parrot.vY += 0.6; parrot.y += parrot.vY;
-            if(parrot.y > 330) { parrot.y = 330; parrot.vY = 0; parrot.jumping = false; }
-            if(gameState.keys['Space'] && !parrot.jumping) { parrot.vY = -14; parrot.jumping = true; AudioEngine.playSuperJump(); }
-            if(gameState.keys['KeyW'] && !parrot.jumping) { parrot.vY = -11; parrot.jumping = true; AudioEngine.playJump(); }
+            // Parrot Physics
+            state.parrot.vY += 0.6; state.parrot.y += state.parrot.vY;
+            if(state.parrot.y > 340) { state.parrot.y = 340; state.parrot.vY = 0; state.parrot.jumping = false; }
+            if((state.keys['Space'] || state.keys['KeyW']) && !state.parrot.jumping) { state.parrot.vY = -12; state.parrot.jumping = true; AudioEngine.jump(); }
 
-            snake.x -= snake.speed;
-            if(snake.x < -100) snake.x = 900;
-
-            // Collision
-            let d = Math.sqrt((parrot.x - snake.x)**2 + (parrot.y - snake.y)**2);
-            if(d < 35) { 
-                gameState.lives--; 
-                AudioEngine.playSnakeHit();
-                snake.x = 900;
-                if(gameState.lives <= 0) gameOver();
-            }
-
-            // Mushrooms
-            mushrooms.forEach((m, i) => {
-                m.x -= 3;
-                if(Math.sqrt((parrot.x - m.x)**2 + (parrot.y - m.y)**2) < 30) {
-                    gameState.score += 50; gameState.mushroomsCollected++;
-                    mushrooms.splice(i, 1); AudioEngine.playCollect(50);
-                }
+            // Objects
+            state.snake.x -= state.snake.speed; if(state.snake.x < -100) state.snake.x = 850;
+            state.mushroomsList.forEach((m, i) => { 
+                m.x -= 3; 
+                if(Math.abs(state.parrot.x - m.x) < 30 && Math.abs(state.parrot.y - m.y) < 30) { state.score += 50; state.mushrooms++; state.mushroomsList.splice(i,1); AudioEngine.coin(); updateHUD(); }
             });
 
-            draw();
-            updateHUD();
-        }
+            // Collision
+            if(Math.abs(state.parrot.x - state.snake.x) < 40 && Math.abs(state.parrot.y - state.snake.y) < 30) {
+                state.lives--; AudioEngine.hit(); state.snake.x = 850; updateHUD();
+                if(state.lives <= 0) gameOver();
+            }
 
-        function spawnMushroom() {
-            mushrooms.push({ x: 850, y: 100 + Math.random() * 200 });
-        }
-
-        function draw() {
-            ctx.clearRect(0,0,800,400);
-            // Sky
-            ctx.fillStyle = "#1e3c72"; ctx.fillRect(0,0,800,400);
-            // Ground
-            ctx.fillStyle = "#5d3a1a"; ctx.fillRect(0, 365, 800, 35);
-            // Parrot
-            ctx.fillStyle = gameState.parrotColor; ctx.beginPath(); ctx.arc(parrot.x+20, parrot.y+15, 18, 0, Math.PI*2); ctx.fill();
-            // Snake
-            ctx.fillStyle = "#ff3d00"; ctx.beginPath(); ctx.ellipse(snake.x+35, snake.y+15, 35, 12, 0, 0, Math.PI*2); ctx.fill();
-            // Mushrooms
-            ctx.fillStyle = "#FF9800"; mushrooms.forEach(m => { ctx.beginPath(); ctx.arc(m.x, m.y, 10, 0, Math.PI*2); ctx.fill(); });
+            drawMushrooms(); drawSnake(); drawParrot();
+            requestAnimationFrame(update);
         }
 
         function gameOver() {
-            gameState.isPlaying = false;
-            AudioEngine.stopMusic(); AudioEngine.playGameOver();
-            saveToLeaderboard(gameState.playerName, gameState.score, gameState.currentLevel);
+            state.isPlaying = false;
             document.getElementById('gameOverMessage').style.display = 'block';
+            document.getElementById('gameOverText').innerText = `Score: ${state.score}`;
+            if(supabaseClient) supabaseClient.from('high_scores').insert([{ player_name: state.playerName, score: state.score, level: state.currentLevel }]);
         }
 
         function updateHUD() {
-            document.getElementById('currentScore').innerText = gameState.score;
-            document.getElementById('livesDisplay').innerText = gameState.lives;
-            document.getElementById('mushroomCount').innerText = gameState.mushroomsCollected;
+            document.getElementById('currentScore').innerText = state.score;
+            document.getElementById('mushroomCount').innerText = state.mushrooms;
+            document.getElementById('livesDisplay').innerText = state.lives;
         }
 
         // ══ UI EVENTS ══
-        document.getElementById('startButton').addEventListener('click', startGame);
-        document.getElementById('restartButton').addEventListener('click', () => location.reload());
-        
+        document.getElementById('startButton').addEventListener('click', () => {
+            AudioEngine.init(); state.isPlaying = true; state.score = 0; state.lives = 3;
+            state.mushroomsList = []; createEnv(); document.getElementById('startMessage').style.display = 'none'; update();
+            setInterval(() => { if(state.isPlaying) state.mushroomsList.push({ x: 800, y: 150+Math.random()*150 }); }, 2000);
+        });
+
         document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
-            const container = document.getElementById('leaderboardContainer');
-            if(container.style.display === 'block') { container.style.display = 'none'; return; }
-            container.style.display = 'block';
             const list = document.getElementById('leaderboardList');
-            list.innerHTML = "Зареждане...";
-            const scores = await getTopScores();
-            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('');
+            document.getElementById('leaderboardContainer').style.display = 'block';
+            if(!supabaseClient) return list.innerText = "Offline";
+            const { data } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(5);
+            list.innerHTML = data.map(s => `<div class="score-row"><span>${s.player_name}</span><span>${s.score}</span></div>`).join('');
         });
 
         document.getElementById('saveProfile').addEventListener('click', () => {
-            gameState.playerName = document.getElementById('playerName').value || "Parrot";
-            gameState.parrotColor = document.getElementById('parrotColor').value || "#4CAF50";
-            alert("Saved!");
+            state.playerName = document.getElementById('playerName').value || "Parrot";
+            state.parrotColor = document.getElementById('parrotColor').value || "#4CAF50";
+            alert("Profile Saved!");
         });
 
-        window.addEventListener('keydown', e => gameState.keys[e.code] = true);
-        window.addEventListener('keyup', e => gameState.keys[e.code] = false);
+        document.getElementById('restartButton').addEventListener('click', () => location.reload());
+        window.addEventListener('keydown', e => state.keys[e.code] = true);
+        window.addEventListener('keyup', e => state.keys[e.code] = false);
 
-        initGame();
+        // Init
+        document.getElementById('startMessage').style.display = 'block';
+        drawEnv(); drawParrot();
     </script>
 </body>
 </html>
