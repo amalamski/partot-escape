@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parrot Escape: Global High-Fidelity Edition</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
-    <!-- Supabase SDK -->
+    <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -78,10 +78,9 @@
 
         .controls-hint { margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; font-size: 0.9rem; }
 
-        /* Leaderboard UI */
         #leaderboardContainer {
             display: none; margin-top: 15px; background: rgba(0,0,0,0.7);
-            padding: 15px; border-radius: 10px; border: 1px solid #4dffea;
+            padding: 10px; border-radius: 10px; border: 1px solid #4dffea;
             max-height: 180px; overflow-y: auto; text-align: left;
         }
         .score-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(77,255,234,0.1); font-size: 0.85rem; }
@@ -117,7 +116,7 @@
                     <div class="reward" id="reward5">👑</div>
                 </div>
                 <div class="controls-hint">
-                    <p>⌨️ WASD or Arrows to fly</p>
+                    <p>⌨️ Controls: WASD or Arrows</p>
                     <p>Space: Super Jump | S/Down: Fast fall</p>
                 </div>
             </div>
@@ -127,6 +126,11 @@
                     <div class="level-indicator" id="levelIndicator">Level 1: Jungle 🌴</div>
                     <div class="progress-container"><div id="progressBar"></div></div>
                     <div class="music-control" id="musicToggle">🔊</div>
+                    
+                    <div class="volume-slider-container" id="volumePanel" style="display:none; position:absolute; top:60px; right:15px; background:rgba(0,0,0,0.8); padding:10px; border-radius:10px; z-index:300; border:1px solid #00b4d8;">
+                        <label style="font-size:0.7rem; color:#4dffea;">🎵 Music <input type="range" id="musicVolume" min="0" max="100" value="40"></label>
+                    </div>
+
                     <canvas id="gameCanvas" width="800" height="400"></canvas>
                     <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
@@ -154,38 +158,31 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════════════════
-        // 1. SUPABASE INTEGRATION (FIXED API HEADERS)
+        // 1. SUPABASE INTEGRATION (FIXED API KEY HANDLER)
         // ═══════════════════════════════════════════════════════════════════════════
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
+        
         let supabaseClient = null;
 
-        function initSupabase() {
-            try {
-                if (typeof supabase !== 'undefined') {
-                    // Експлицитно инициализираме клиента
-                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                }
-            } catch (e) { console.error("Supabase fail:", e); }
-        }
-        initSupabase();
+        // Корекция на инициализацията - използваме supabaseClient за избягване на конфликт
+        try {
+            if (typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (e) { console.error("Database connection failed."); }
 
         async function saveToLeaderboard(name, score, level) {
             if (!supabaseClient || !name || score <= 0) return;
-            const { error } = await supabaseClient
-                .from('high_scores')
-                .insert([{ player_name: name, score: score, level: level }]);
-            if(error) console.error("Leaderboard Error:", error.message);
+            const { error } = await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
+            if(error) console.error("Cloud Error:", error.message);
         }
 
         async function getTopScores() {
             if (!supabaseClient) return [];
-            const { data, error } = await supabaseClient
-                .from('high_scores')
-                .select('*')
-                .order('score', { ascending: false })
-                .limit(5);
-            return error ? [] : data;
+            const { data, error } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(5);
+            if(error) { console.error("Fetch error:", error.message); return []; }
+            return data || [];
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
@@ -195,18 +192,20 @@
             let ctx = null, musicGain = null, sfxGain = null, masterGain = null, bgmInterval = null, bgmPlaying = false;
             function init() { if (ctx) return; ctx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = ctx.createGain(); masterGain.connect(ctx.destination); musicGain = ctx.createGain(); sfxGain = ctx.createGain(); musicGain.connect(masterGain); sfxGain.connect(masterGain); musicGain.gain.value = 0.4; sfxGain.gain.value = 0.6; }
             function playTone(f, d, t, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const o = ctx.createOscillator(); const amp = ctx.createGain(); o.type = t || 'sine'; o.frequency.setValueAtTime(f, tt); amp.gain.setValueAtTime(v || 0.3, tt); amp.gain.exponentialRampToValueAtTime(0.001, tt + d); o.connect(amp); amp.connect(g || sfxGain); o.start(tt); o.stop(tt + d); }
+            function playNoise(d, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const buf = ctx.createBuffer(1, ctx.sampleRate * d, ctx.sampleRate); const dat = buf.getChannelData(0); for (let i = 0; i < dat.length; i++) dat[i] = Math.random() * 2 - 1; const src = ctx.createBufferSource(); src.buffer = buf; const gg = ctx.createGain(); gg.gain.setValueAtTime(v || 0.1, tt); gg.gain.exponentialRampToValueAtTime(0.001, tt + d); src.connect(gg); gg.connect(g || sfxGain); src.start(tt); }
             return {
-                init, 
+                init, setMusicVolume: v => musicGain.gain.value = v,
                 playJump: () => playTone(300, 0.15),
-                playHit: () => playTone(150, 0.3, 'sawtooth'),
+                playHit: () => { playTone(150, 0.3, 'sawtooth'); playNoise(0.2); },
                 playCollect: () => { playTone(600, 0.1); playTone(900, 0.1, 'sine', null, 0.2, 0.05); },
-                startMusic: () => { init(); AudioEngine.stopMusic(); bgmPlaying = true; bgmInterval = setInterval(() => { if(bgmPlaying) playTone([262, 330, 392, 523][Math.floor(Math.random()*4)], 0.5, 'triangle', musicGain, 0.08); }, 500); },
+                playGameOver: () => { [440, 349, 262].forEach((f, i) => playTone(f, 0.5, 'sawtooth', sfxGain, 0.2, 0, i * 0.25)); },
+                startMusic: () => { init(); AudioEngine.stopMusic(); bgmPlaying = true; bgmInterval = setInterval(() => { if(bgmPlaying) playTone([262, 330, 392, 523][Math.floor(Math.random()*4)], 0.5, 'triangle', musicGain, 0.1); }, 500); },
                 stopMusic: () => { bgmPlaying = false; clearInterval(bgmInterval); }
             };
         })();
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // 3. GRAPHICS & LEVELS (FULL 100% FIDELITY)
+        // 3. HIGH-FIDELITY GRAPHICS & ALL 10 LEVELS
         // ═══════════════════════════════════════════════════════════════════════════
         const levels = [
             { name: "Jungle", bg: ["#1e4d2b","#2a6b3c"], snakeSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿","🐒"], targetDist: 1000 },
@@ -237,7 +236,7 @@
             ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 32, parrot.y + 8, 4, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(parrot.x + 33, parrot.y + 8, 2, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.moveTo(parrot.x, parrot.y + 18); ctx.lineTo(parrot.x - 10, parrot.y + 12); ctx.lineTo(parrot.x - 10, parrot.y + 24); ctx.fill();
-            const wingY = Math.sin(parrot.wingAnim) * 5; ctx.fillStyle = '#2E7D32'; ctx.beginPath(); ctx.ellipse(parrot.x + 14, parrot.y + 22 + wingY, 10, 6, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
+            const wingY = Math.sin(parrot.wingAnim) * 5; ctx.fillStyle = shadeColor(state.parrotColor, -20); ctx.beginPath(); ctx.ellipse(parrot.x + 14, parrot.y + 22 + wingY, 10, 6, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
             parrot.wingAnim += 0.2; ctx.restore();
         }
 
@@ -259,7 +258,7 @@
                 ctx.save();
                 ctx.fillStyle = '#FFF9C4'; ctx.fillRect(m.x + 12, m.y + 12, 6, 14);
                 ctx.fillStyle = m.color; ctx.beginPath(); ctx.ellipse(m.x + 15, m.y + 10, 15, 10, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x+10, m.y+7, 2, 0, Math.PI*2); ctx.arc(m.x+20, m.y+7, 2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x + 10, m.y + 7, 2, 0, Math.PI * 2); ctx.arc(m.x + 20, m.y + 7, 2, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             });
         }
@@ -355,7 +354,7 @@
         function gameOver() {
             state.isPlaying = false; AudioEngine.stopMusic();
             document.getElementById('gameOverMessage').style.display = 'block';
-            document.getElementById('gameOverText').innerText = `Score: ${state.score}`;
+            document.getElementById('gameOverText').innerText = `Final Score: ${state.score}`;
             saveToLeaderboard(state.playerName, state.score, state.currentLevel);
         }
 
@@ -370,15 +369,16 @@
             return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
         }
 
-        // ── UI Events ──
+        // ── Events ──
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('restartButton').addEventListener('click', () => location.reload());
         document.getElementById('nextLevelButton').addEventListener('click', () => { state.currentLevel++; startGame(); });
+        
         document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
             const list = document.getElementById('leaderboardList');
             document.getElementById('leaderboardContainer').style.display = 'block';
             const scores = await getTopScores();
-            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('');
+            list.innerHTML = scores.length ? scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('') : "No scores yet.";
         });
 
         document.getElementById('saveProfile').addEventListener('click', () => {
