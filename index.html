@@ -138,7 +138,6 @@
             box-shadow: 0 0 15px rgba(255, 61, 0, 0.7);
         }
 
-        /* Leaderboard Specific Styles */
         #showLeaderboardBtn {
             background: transparent;
             border: 1px solid #4dffea;
@@ -156,7 +155,7 @@
             border-radius: 10px;
             border: 1px solid #ff9a00;
             font-size: 0.85rem;
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
         }
 
@@ -191,34 +190,6 @@
             font-weight: bold;
         }
 
-        .controls {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 15px;
-            border-radius: 15px;
-            margin-top: 20px;
-        }
-
-        .key {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            background: #333;
-            color: white;
-            border-radius: 8px;
-            text-align: center;
-            line-height: 50px;
-            margin: 5px;
-            font-weight: bold;
-            border: 2px solid #666;
-            box-shadow: 0 4px 0 #222;
-        }
-
-        .key.active {
-            background: #ff9a00;
-            transform: translateY(4px);
-            box-shadow: 0 0 0 #222;
-        }
-
         .music-control {
             position: absolute;
             top: 15px;
@@ -229,57 +200,6 @@
             cursor: pointer;
             font-size: 1.5rem;
             z-index: 300;
-        }
-
-        .volume-slider-container {
-            position: absolute;
-            top: 55px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 8px 12px;
-            border-radius: 10px;
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            font-size: 0.75rem;
-            color: #4dffea;
-            border: 1px solid #00b4d8;
-        }
-
-        .volume-slider-container.show {
-            display: flex;
-        }
-
-        .level-indicator {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            color: #ff9a00;
-            z-index: 300;
-        }
-
-        .rewards {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-            justify-content: center;
-        }
-
-        .reward {
-            font-size: 2rem;
-            filter: grayscale(1);
-            transition: all 0.3s;
-        }
-
-        .reward.unlocked {
-            filter: grayscale(0);
-            transform: scale(1.2);
         }
 
         .game-message {
@@ -308,13 +228,6 @@
             font-size: 0.8rem;
             color: #fff;
         }
-
-        @media (max-width: 850px) {
-            .game-area { flex-direction: column; }
-            .left-panel, .right-panel { min-width: 100%; }
-            h1 { font-size: 2rem; }
-            .stat-value { font-size: 1.5rem; }
-        }
     </style>
 </head>
 <body>
@@ -332,37 +245,21 @@
                         <input type="text" id="playerName" placeholder="Enter parrot name" maxlength="15">
                         <input type="text" id="parrotColor" placeholder="Favorite color (e.g., green)" maxlength="10">
                         <button id="saveProfile">Save Profile</button>
-                        <button id="loadProfile">Load Progress</button>
                     </div>
                     <div class="stats">
                         <div class="stat-box"><div>Level</div><div class="stat-value" id="currentLevel">1</div></div>
                         <div class="stat-box"><div>Score</div><div class="stat-value" id="currentScore">0</div></div>
                     </div>
                 </div>
-
-                <div class="rewards-section">
-                    <h2>🏆 Rewards</h2>
-                    <div class="rewards">
-                        <div class="reward" id="reward1">🥉</div>
-                        <div class="reward" id="reward2">🥈</div>
-                        <div class="reward" id="reward3">🥇</div>
-                    </div>
-                </div>
             </div>
 
             <div class="right-panel">
                 <div class="screen">
-                    <div class="level-indicator" id="levelIndicator">Level 1: Jungle 🌴</div>
                     <div class="music-control" id="musicToggle">🔊</div>
-                    <div class="volume-slider-container" id="volumePanel">
-                        <label>🎵 Music <input type="range" id="musicVolume" min="0" max="100" value="40"></label>
-                    </div>
-
                     <canvas id="gameCanvas" width="800" height="400"></canvas>
-
                     <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
-                    <!-- START SCREEN WITH LEADERBOARD -->
+                    <!-- СЪОБЩЕНИЯ -->
                     <div class="game-message" id="startMessage">
                         <h2>Ready to Fly? 🦜</h2>
                         <button id="startButton">START GAME</button>
@@ -371,11 +268,6 @@
                         <div id="leaderboardContainer">
                             <div id="leaderboardList">Зареждане...</div>
                         </div>
-                    </div>
-
-                    <div class="game-message" id="levelCompleteMessage">
-                        <h2>Level Complete! 🎉</h2>
-                        <button id="nextLevelButton">Next Level →</button>
                     </div>
 
                     <div class="game-message" id="gameOverMessage">
@@ -388,70 +280,67 @@
     </div>
 
     <script>
-        // ══ SUPABASE CONFIG ══
+        // ══ SUPABASE CONFIG (SAFE BOOT) ══
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabaseClient = null;
+
+        try {
+            if (typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (e) { console.error("Cloud Error:", e); }
 
         async function saveToLeaderboard(name, score, level) {
-            if (!name || score <= 0) return;
-            const { error } = await supabaseClient
-                .from('high_scores')
-                .insert([{ player_name: name, score: score, level: level }]);
-            if (error) console.error('Error saving:', error);
+            if (!supabaseClient || !name || score <= 0) return;
+            await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
         }
 
         async function getTopScores() {
-            const { data, error } = await supabaseClient
-                .from('high_scores')
-                .select('*')
-                .order('score', { ascending: false })
-                .limit(10);
-            if (error) console.error('Error loading:', error);
+            if (!supabaseClient) return [];
+            const { data } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(10);
             return data || [];
         }
 
         // ══ AUDIO ENGINE ══
         const AudioEngine = (() => {
-            let ctx = null, musicGain = null, sfxGain = null, masterGain = null;
+            let ctx = null, sfxGain = null;
             function init() {
                 if (ctx) return;
                 ctx = new (window.AudioContext || window.webkitAudioContext)();
-                masterGain = ctx.createGain(); masterGain.connect(ctx.destination);
-                musicGain = ctx.createGain(); musicGain.gain.value = 0.4; musicGain.connect(masterGain);
-                sfxGain = ctx.createGain(); sfxGain.gain.value = 0.6; sfxGain.connect(masterGain);
+                sfxGain = ctx.createGain(); sfxGain.connect(ctx.destination);
             }
-            function playTone(freq, dur) {
-                if (!ctx) return;
-                const osc = ctx.createOscillator(); const g = ctx.createGain();
-                osc.frequency.setValueAtTime(freq, ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-                osc.connect(g); g.connect(sfxGain);
-                osc.start(); osc.stop(ctx.currentTime + dur);
-            }
-            return { init, playJump: () => playTone(400, 0.2), playClick: () => playTone(800, 0.1) };
+            return { 
+                init, 
+                playJump: () => {
+                    if(!ctx) return;
+                    const o = ctx.createOscillator(); const g = ctx.createGain();
+                    o.frequency.setValueAtTime(400, ctx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+                    o.connect(g); g.connect(sfxGain); o.start(); o.stop(ctx.currentTime + 0.2);
+                }
+            };
         })();
 
         // ══ GAME LOGIC ══
-        const gameState = {
-            currentLevel: 1, score: 0, lives: 3, isPlaying: false,
-            playerName: "Parrot", parrotColor: "#4CAF50", keys: {}
-        };
-
+        const gameState = { currentLevel: 1, score: 0, isPlaying: false, playerName: "Parrot", parrotColor: "#4CAF50", keys: {} };
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let parrot = { x: 80, y: 310, width: 40, height: 35, vY: 0 };
+        let parrot = { x: 80, y: 310, vY: 0 };
         let snake = { x: 850, y: 310, speed: 3 };
+
+        function initGame() {
+            document.getElementById('startMessage').style.display = 'block';
+            ctx.fillStyle = "#1e3c72"; ctx.fillRect(0,0,800,400);
+            ctx.fillStyle = "#5d3a1a"; ctx.fillRect(0, 365, 800, 35);
+        }
 
         function updateGame() {
             if (!gameState.isPlaying) return;
             ctx.clearRect(0, 0, 800, 400);
-            
-            // Background & Ground
             ctx.fillStyle = "#1e3c72"; ctx.fillRect(0,0,800,400);
             ctx.fillStyle = "#5d3a1a"; ctx.fillRect(0, 365, 800, 35);
 
-            // Physics
             parrot.vY += 0.6; parrot.y += parrot.vY;
             if (parrot.y > 330) { parrot.y = 330; parrot.vY = 0; }
             if (gameState.keys['Space'] && parrot.y >= 330) { parrot.vY = -13; AudioEngine.playJump(); }
@@ -459,11 +348,8 @@
             snake.x -= snake.speed;
             if (snake.x < -50) snake.x = 850;
 
-            // Collision
-            let dx = parrot.x - snake.x; let dy = parrot.y - snake.y;
-            if (Math.sqrt(dx*dx + dy*dy) < 30) { gameOver(); }
+            if (Math.abs(parrot.x - snake.x) < 30 && Math.abs(parrot.y - snake.y) < 30) { gameOver(); }
 
-            // Draw
             ctx.fillStyle = gameState.parrotColor; ctx.beginPath(); ctx.arc(parrot.x+20, parrot.y+15, 15, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.ellipse(snake.x+20, snake.y+15, 25, 10, 0, 0, Math.PI*2); ctx.fill();
 
@@ -478,54 +364,36 @@
             document.getElementById('gameOverMessage').style.display = 'block';
         }
 
-        // ══ UI EVENTS ══
+        // ══ EVENTS ══
         document.getElementById('startButton').addEventListener('click', () => {
             AudioEngine.init();
             document.getElementById('startMessage').style.display = 'none';
-            gameState.isPlaying = true;
-            gameState.score = 0;
+            gameState.isPlaying = true; gameState.score = 0;
             updateGame();
         });
 
         document.getElementById('restartButton').addEventListener('click', () => location.reload());
 
-        // LEADERBOARD TOGGLE
-        const leaderboardBtn = document.getElementById('showLeaderboardBtn');
-        const leaderboardContainer = document.getElementById('leaderboardContainer');
-        const leaderboardList = document.getElementById('leaderboardList');
-
-        leaderboardBtn.addEventListener('click', async () => {
-            if (leaderboardContainer.style.display === 'block') {
-                leaderboardContainer.style.display = 'none';
-                return;
-            }
-            leaderboardContainer.style.display = 'block';
-            leaderboardList.innerHTML = "Търсим шампионите...";
-            
+        document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
+            const container = document.getElementById('leaderboardContainer');
+            const list = document.getElementById('leaderboardList');
+            if (container.style.display === 'block') { container.style.display = 'none'; return; }
+            container.style.display = 'block';
+            list.innerHTML = "Зареждане...";
             const scores = await getTopScores();
-            if (scores.length === 0) {
-                leaderboardList.innerHTML = "Няма записи още.";
-            } else {
-                leaderboardList.innerHTML = scores.map((s, i) => `
-                    <div class="score-row">
-                        <span>${i+1}. <span class="score-name">${s.player_name}</span></span>
-                        <span class="score-val">${s.score} (Lvl ${s.level})</span>
-                    </div>
-                `).join('');
-            }
+            list.innerHTML = scores.length ? scores.map((s, i) => `<div class="score-row"><span>${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('') : "Няма записи.";
         });
 
         document.getElementById('saveProfile').addEventListener('click', () => {
-            const name = document.getElementById('playerName').value;
-            if (name) {
-                gameState.playerName = name;
-                alert("Профилът е запазен!");
-            }
+            const n = document.getElementById('playerName').value;
+            if (n) { gameState.playerName = n; alert("Името е запазено!"); }
         });
 
         window.addEventListener('keydown', e => gameState.keys[e.code] = true);
         window.addEventListener('keyup', e => gameState.keys[e.code] = false);
 
+        // СТАРТ
+        initGame();
     </script>
 </body>
 </html>
