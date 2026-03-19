@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parrot Escape: Global High-Fidelity Edition</title>
+    <title>Parrot Escape: Bomb Survival Edition</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
     <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -26,20 +26,20 @@
         header {
             text-align: center; padding: 15px; width: 100%;
             background: rgba(0, 0, 0, 0.5); border-radius: 20px;
-            border: 3px solid #ff9a00; box-shadow: 0 0 20px rgba(255, 154, 0, 0.5);
+            border: 3px solid #ff3d00; box-shadow: 0 0 20px rgba(255, 61, 0, 0.5);
         }
 
-        h1 { font-size: 2.8rem; color: #ff9a00; text-shadow: 3px 3px 0 #ff3d00; margin-bottom: 10px; }
+        h1 { font-size: 2.8rem; color: #ff3d00; text-shadow: 3px 3px 0 #900; margin-bottom: 10px; }
         .subtitle { font-size: 1.2rem; color: #4dffea; }
 
         .game-area { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; justify-content: center; }
 
-        .left-panel { flex: 1; min-width: 300px; background: rgba(0, 20, 40, 0.8); border-radius: 15px; padding: 20px; border: 2px solid #00b4d8; }
+        .left-panel { flex: 1; min-width: 300px; background: rgba(0, 20, 40, 0.8); border-radius: 15px; padding: 20px; border: 2px solid #ff3d00; }
         .right-panel { flex: 2; min-width: 500px; display: flex; flex-direction: column; gap: 20px; }
 
         .screen {
             background: #0f3460; border-radius: 15px; padding: 15px;
-            border: 3px solid #ff9a00; position: relative;
+            border: 3px solid #ff3d00; position: relative;
             overflow: hidden; min-height: 400px;
         }
 
@@ -66,33 +66,29 @@
         .reward { font-size: 2rem; filter: grayscale(1); transition: 0.3s; }
         .reward.unlocked { filter: grayscale(0); transform: scale(1.2); }
 
-        .health-bar-container { position: absolute; bottom: 20px; left: 15px; z-index: 300; background: rgba(0,0,0,0.6); border-radius: 10px; padding: 5px 10px; font-size: 0.8rem; color: #fff; }
         .progress-container { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 200px; height: 10px; background: rgba(0,0,0,0.5); border-radius: 5px; border: 1px solid #4dffea; z-index: 300; overflow: hidden; }
         #progressBar { width: 0%; height: 100%; background: #4dffea; transition: width 0.3s; }
 
         .game-message {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.95); padding: 30px; border-radius: 20px;
-            text-align: center; border: 3px solid #ff9a00; z-index: 400; display: none; width: 85%;
+            text-align: center; border: 3px solid #ff3d00; z-index: 400; display: none; width: 85%;
         }
-
-        .controls-hint { margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; font-size: 0.9rem; }
 
         #leaderboardContainer {
             display: none; margin-top: 15px; background: rgba(0,0,0,0.7);
-            padding: 10px; border-radius: 10px; border: 1px solid #4dffea;
+            padding: 10px; border-radius: 10px; border: 1px solid #ff3d00;
             max-height: 180px; overflow-y: auto; text-align: left;
         }
-        .score-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(77,255,234,0.1); font-size: 0.85rem; }
+        .score-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,61,0,0.1); font-size: 0.85rem; }
         .score-name { color: #ff9a00; font-weight: bold; }
-        .score-val { color: #4dffea; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🐦 Parrot Escape 🐍</h1>
-            <p class="subtitle">Escape the giant snake and reach the nest!</p>
+            <h1>🐦 Parrot Escape 💣</h1>
+            <p class="subtitle">Avoid the bombs! One hit and it's over!</p>
         </header>
 
         <div class="game-area">
@@ -115,9 +111,8 @@
                     <div class="reward" id="reward3">🥇</div><div class="reward" id="reward4">🏆</div>
                     <div class="reward" id="reward5">👑</div>
                 </div>
-                <div class="controls-hint">
-                    <p>⌨️ Controls: WASD or Arrows</p>
-                    <p>Space: Super Jump | S/Down: Fast fall</p>
+                <div style="margin-top:15px; padding:10px; background:rgba(0,0,0,0.3); border-radius:10px; font-size:0.85rem;">
+                    ⌨️ Use Arrows or WASD<br>Space: Super Jump<br><b style="color:#ff3d00;">⚠️ Danger: Bombs are instant kill!</b>
                 </div>
             </div>
 
@@ -126,16 +121,11 @@
                     <div class="level-indicator" id="levelIndicator">Level 1: Jungle 🌴</div>
                     <div class="progress-container"><div id="progressBar"></div></div>
                     <div class="music-control" id="musicToggle">🔊</div>
-                    
-                    <div class="volume-slider-container" id="volumePanel" style="display:none; position:absolute; top:60px; right:15px; background:rgba(0,0,0,0.8); padding:10px; border-radius:10px; z-index:300; border:1px solid #00b4d8;">
-                        <label style="font-size:0.7rem; color:#4dffea;">🎵 Music <input type="range" id="musicVolume" min="0" max="100" value="40"></label>
-                    </div>
-
                     <canvas id="gameCanvas" width="800" height="400"></canvas>
-                    <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
                     <div class="game-message" id="startMessage">
                         <h2 style="font-size:2.5rem; color:#ff9a00;">Ready to Fly? 🦜</h2>
+                        <p>Avoid the <b>Bombs</b> and reach the <b>Nest 🪺</b>!</p>
                         <button id="startButton" style="padding:15px 40px; font-size:1.5rem;">START GAME</button>
                         <br>
                         <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; margin-top:15px; font-size:0.8rem; cursor:pointer;">🏆 Global Leaderboard</button>
@@ -143,13 +133,12 @@
                     </div>
 
                     <div class="game-message" id="gameOverMessage">
-                        <h2>Game Over! 😱</h2><p id="gameOverText"></p><button id="restartButton">Try Again</button>
+                        <h2 style="color:#ff3d00;">BOOM! 💥</h2>
+                        <p id="gameOverText"></p>
+                        <button id="restartButton">Try Again</button>
                     </div>
                     <div class="game-message" id="levelCompleteMessage">
                         <h2>Safe at Home! 🪺</h2><p id="levelCompleteText"></p><button id="nextLevelButton">Next Level →</button>
-                    </div>
-                    <div class="game-message" id="winMessage">
-                        <h2>🎊 YOU WIN! 🎊</h2><p>You mastered all 10 regions!</p><button onclick="location.reload()">Reset Game</button>
                     </div>
                 </div>
             </div>
@@ -158,71 +147,51 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════════════════
-        // 1. SUPABASE INTEGRATION (FIXED API KEY HANDLER)
+        // 1. SUPABASE & AUDIO ENGINE
         // ═══════════════════════════════════════════════════════════════════════════
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
-        
         let supabaseClient = null;
-
-        // Корекция на инициализацията - използваме supabaseClient за избягване на конфликт
-        try {
-            if (typeof supabase !== 'undefined') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        } catch (e) { console.error("Database connection failed."); }
+        try { if(typeof supabase !== 'undefined') supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
 
         async function saveToLeaderboard(name, score, level) {
             if (!supabaseClient || !name || score <= 0) return;
-            const { error } = await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
-            if(error) console.error("Cloud Error:", error.message);
+            await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
         }
 
         async function getTopScores() {
             if (!supabaseClient) return [];
-            const { data, error } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(5);
-            if(error) { console.error("Fetch error:", error.message); return []; }
+            const { data } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(5);
             return data || [];
         }
 
-        // ═══════════════════════════════════════════════════════════════════════════
-        // 2. AUDIO ENGINE (FULL PROCEDURAL CHIPTUNE)
-        // ═══════════════════════════════════════════════════════════════════════════
         const AudioEngine = (() => {
             let ctx = null, musicGain = null, sfxGain = null, masterGain = null, bgmInterval = null, bgmPlaying = false;
             function init() { if (ctx) return; ctx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = ctx.createGain(); masterGain.connect(ctx.destination); musicGain = ctx.createGain(); sfxGain = ctx.createGain(); musicGain.connect(masterGain); sfxGain.connect(masterGain); musicGain.gain.value = 0.4; sfxGain.gain.value = 0.6; }
             function playTone(f, d, t, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const o = ctx.createOscillator(); const amp = ctx.createGain(); o.type = t || 'sine'; o.frequency.setValueAtTime(f, tt); amp.gain.setValueAtTime(v || 0.3, tt); amp.gain.exponentialRampToValueAtTime(0.001, tt + d); o.connect(amp); amp.connect(g || sfxGain); o.start(tt); o.stop(tt + d); }
-            function playNoise(d, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const buf = ctx.createBuffer(1, ctx.sampleRate * d, ctx.sampleRate); const dat = buf.getChannelData(0); for (let i = 0; i < dat.length; i++) dat[i] = Math.random() * 2 - 1; const src = ctx.createBufferSource(); src.buffer = buf; const gg = ctx.createGain(); gg.gain.setValueAtTime(v || 0.1, tt); gg.gain.exponentialRampToValueAtTime(0.001, tt + d); src.connect(gg); gg.connect(g || sfxGain); src.start(tt); }
             return {
-                init, setMusicVolume: v => musicGain.gain.value = v,
+                init, 
                 playJump: () => playTone(300, 0.15),
-                playHit: () => { playTone(150, 0.3, 'sawtooth'); playNoise(0.2); },
+                playExplosion: () => { playTone(100, 0.5, 'sawtooth', sfxGain, 0.5); playTone(60, 0.6, 'sawtooth', sfxGain, 0.4, 0.05); },
                 playCollect: () => { playTone(600, 0.1); playTone(900, 0.1, 'sine', null, 0.2, 0.05); },
-                playGameOver: () => { [440, 349, 262].forEach((f, i) => playTone(f, 0.5, 'sawtooth', sfxGain, 0.2, 0, i * 0.25)); },
                 startMusic: () => { init(); AudioEngine.stopMusic(); bgmPlaying = true; bgmInterval = setInterval(() => { if(bgmPlaying) playTone([262, 330, 392, 523][Math.floor(Math.random()*4)], 0.5, 'triangle', musicGain, 0.1); }, 500); },
                 stopMusic: () => { bgmPlaying = false; clearInterval(bgmInterval); }
             };
         })();
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // 3. HIGH-FIDELITY GRAPHICS & ALL 10 LEVELS
+        // 2. HIGH-FIDELITY GRAPHICS (BOMB RESTORED)
         // ═══════════════════════════════════════════════════════════════════════════
         const levels = [
-            { name: "Jungle", bg: ["#1e4d2b","#2a6b3c"], snakeSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿","🐒"], targetDist: 1000 },
-            { name: "Desert", bg: ["#7a5c28","#c4892d"], snakeSpeed: 3.3, mushroomRate: 1400, env: ["🌵","🏜️","🐪"], targetDist: 1500 },
-            { name: "Mountains", bg: ["#3c4a5c","#5a7090"], snakeSpeed: 3.8, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"], targetDist: 2000 },
-            { name: "Forest", bg: ["#1a3320","#2d5c38"], snakeSpeed: 4.3, mushroomRate: 1200, env: ["🌲","🍂","🦌"], targetDist: 2500 },
-            { name: "Swamp", bg: ["#2a3d20","#4a6b33"], snakeSpeed: 4.8, mushroomRate: 1100, env: ["🐊","🪵"], targetDist: 3000 },
-            { name: "Cave", bg: ["#1a1a2e","#2a2a4e"], snakeSpeed: 5.3, mushroomRate: 1000, env: ["🪨","🦇","💎"], targetDist: 3500 },
-            { name: "Beach", bg: ["#1a6b8a","#2a9bc4"], snakeSpeed: 5.8, mushroomRate: 900, env: ["🏖️","🐚","🌊"], targetDist: 4000 },
-            { name: "Snow", bg: ["#3a5a7a","#5a8aaa"], snakeSpeed: 6.3, mushroomRate: 800, env: ["❄️","🐻"], targetDist: 4500 },
-            { name: "Volcano", bg: ["#5c1a0a","#8b2a12"], snakeSpeed: 6.8, mushroomRate: 700, env: ["🌋","🔥"], targetDist: 5000 },
-            { name: "Sky", bg: ["#1a3a6a","#2a5aaa"], snakeSpeed: 7.5, mushroomRate: 600, env: ["☁️","🌈","🦅"], targetDist: 6000 }
+            { name: "Jungle", bg: ["#1e4d2b","#2a6b3c"], bombSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿","🐒"], targetDist: 1000 },
+            { name: "Desert", bg: ["#7a5c28","#c4892d"], bombSpeed: 3.5, mushroomRate: 1400, env: ["🌵","🏜️","🐪"], targetDist: 1500 },
+            { name: "Mountains", bg: ["#3c4a5c","#5a7090"], bombSpeed: 4.2, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"], targetDist: 2000 },
+            { name: "Sky", bg: ["#1a3a6a","#2a5aaa"], bombSpeed: 7.5, mushroomRate: 600, env: ["☁️","🌈","🦅"], targetDist: 4000 }
         ];
 
         let state = { currentLevel: 1, score: 0, mushrooms: 0, lives: 3, isPlaying: false, keys: {}, playerName: "Parrot", parrotColor: "#4CAF50", distance: 0, lastMushroomTime: Date.now() };
         let parrot = { x: 80, y: 310, width: 40, height: 35, vY: 0, jumping: false, wingAnim: 0 };
-        let snake = { x: 850, y: 310, speed: 3 };
+        let bomb = { x: 850, y: 310, width: 40, height: 40, speed: 3 };
         let nest = { x: 1000, y: 310, active: false };
         let mushroomsList = [], environments = [], obstacles = [], spawnTimer;
 
@@ -240,16 +209,27 @@
             parrot.wingAnim += 0.2; ctx.restore();
         }
 
-        function drawSnake() {
+        // ПЪЛНА НОВА ГРАФИКА ЗА БОМБАТА
+        function drawBomb() {
             ctx.save();
-            ctx.fillStyle = '#FF5722'; ctx.beginPath(); ctx.ellipse(snake.x + 25, snake.y + 14, 25, 12, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#D84315'; ctx.beginPath(); ctx.ellipse(snake.x + 48, snake.y + 14, 12, 14, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(snake.x + 53, snake.y + 9, 3, 0, Math.PI * 2); ctx.fill();
-            if (Math.floor(Date.now() / 200) % 2 === 0) {
-                ctx.strokeStyle = '#FF4081'; ctx.lineWidth = 2; ctx.beginPath(); 
-                ctx.moveTo(snake.x + 60, snake.y + 14); ctx.lineTo(snake.x + 68, snake.y + 12);
-                ctx.moveTo(snake.x + 60, snake.y + 14); ctx.lineTo(snake.x + 68, snake.y + 16); ctx.stroke();
-            }
+            // Бомба - тяло
+            ctx.fillStyle = '#222';
+            ctx.beginPath(); ctx.arc(bomb.x + 20, bomb.y + 20, 18, 0, Math.PI * 2); ctx.fill();
+            // Блясък върху бомбата
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath(); ctx.arc(bomb.x + 14, bomb.y + 14, 5, 0, Math.PI * 2); ctx.fill();
+            // Гърло на бомбата
+            ctx.fillStyle = '#444';
+            ctx.fillRect(bomb.x + 15, bomb.y, 10, 5);
+            // Фитил
+            ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(bomb.x + 20, bomb.y); ctx.quadraticCurveTo(bomb.x + 25, bomb.y - 10, bomb.x + 30, bomb.y - 5); ctx.stroke();
+            // Искра на фитила
+            const sparkSize = 3 + Math.random() * 4;
+            ctx.fillStyle = '#ff9a00';
+            ctx.beginPath(); ctx.arc(bomb.x + 30, bomb.y - 5, sparkSize, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(bomb.x + 30, bomb.y - 5, sparkSize/2, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
 
@@ -286,7 +266,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // 4. ENGINE & CONTROLS
+        // 3. ENGINE LOGIC (INSTANT KILL BOMB)
         // ═══════════════════════════════════════════════════════════════════════════
         function update() {
             if(!state.isPlaying) return;
@@ -313,27 +293,35 @@
                 if(Math.abs(parrot.x - nest.x) < 40 && Math.abs(parrot.y - 310) < 50) completeLevel();
             }
 
-            snake.x -= lvl.snakeSpeed; if(snake.x < -150) { snake.x = 850; snake.y = 100+Math.random()*200; }
-            if(Math.abs(parrot.x - snake.x) < 45 && Math.abs(parrot.y - snake.y) < 30) { 
-                state.lives--; AudioEngine.playHit(); snake.x = 850; if(state.lives <= 0) gameOver();
+            // Бомба логика - Преследване
+            bomb.x -= lvl.bombSpeed; if(bomb.x < -150) { bomb.x = 850; bomb.y = 100+Math.random()*200; }
+            // Вертикално следене на папагала
+            if(bomb.y < parrot.y) bomb.y += 0.5; else bomb.y -= 0.5;
+
+            // КРИТИЧЕН СБЛЪСЪК С БОМБА -> GAME OVER
+            if(Math.abs(parrot.x - bomb.x) < 35 && Math.abs(parrot.y - bomb.y) < 30) { 
+                AudioEngine.playExplosion();
+                gameOver("Killed by a Bomb! 💥"); 
+                return;
             }
 
+            // Гъби
             mushroomsList.forEach((m, i) => { 
                 m.x -= 3; if(Math.abs(parrot.x - m.x) < 35 && Math.abs(parrot.y - m.y) < 35) { state.score += 50; state.mushrooms++; mushroomsList.splice(i,1); AudioEngine.playCollect(); }
             });
 
+            // Препятствия
             obstacles.forEach((o, i) => {
                 o.x -= 4; if(Math.abs(parrot.x - o.x) < 35 && Math.abs(parrot.y - o.y) < 35) { state.score = Math.max(0, state.score - 50); obstacles.splice(i,1); AudioEngine.playHit(); }
             });
 
-            drawObstacles(); drawMushrooms(); drawSnake(); drawParrot();
+            drawObstacles(); drawMushrooms(); drawBomb(); drawParrot();
             updateHUD(); requestAnimationFrame(update);
         }
 
         function updateHUD() {
             document.getElementById('currentScore').innerText = state.score;
             document.getElementById('mushroomCount').innerText = state.mushrooms;
-            document.getElementById('livesDisplay').innerText = state.lives;
             document.getElementById('currentLevel').innerText = state.currentLevel;
             document.getElementById('levelIndicator').innerText = `Level ${state.currentLevel}: ${levels[state.currentLevel-1].name}`;
         }
@@ -351,17 +339,17 @@
             update();
         }
 
-        function gameOver() {
+        function gameOver(reason) {
             state.isPlaying = false; AudioEngine.stopMusic();
             document.getElementById('gameOverMessage').style.display = 'block';
-            document.getElementById('gameOverText').innerText = `Final Score: ${state.score}`;
+            document.getElementById('gameOverText').innerText = (reason || "Caught!") + ` Final Score: ${state.score}`;
             saveToLeaderboard(state.playerName, state.score, state.currentLevel);
         }
 
         function completeLevel() {
             state.isPlaying = false; AudioEngine.stopMusic();
             if(state.currentLevel >= 10) document.getElementById('winMessage').style.display = 'block';
-            else { document.getElementById('levelCompleteMessage').style.display = 'block'; document.getElementById('levelCompleteText').innerText = `Region ${state.currentLevel} escaped!`; }
+            else { document.getElementById('levelCompleteMessage').style.display = 'block'; document.getElementById('levelCompleteText').innerText = `Region ${state.currentLevel} cleared!`; }
         }
 
         function shadeColor(color, percent) {
@@ -373,18 +361,16 @@
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('restartButton').addEventListener('click', () => location.reload());
         document.getElementById('nextLevelButton').addEventListener('click', () => { state.currentLevel++; startGame(); });
-        
         document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
             const list = document.getElementById('leaderboardList');
             document.getElementById('leaderboardContainer').style.display = 'block';
             const scores = await getTopScores();
-            list.innerHTML = scores.length ? scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('') : "No scores yet.";
+            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('');
         });
 
         document.getElementById('saveProfile').addEventListener('click', () => {
             state.playerName = document.getElementById('playerNameInput').value || "Parrot";
-            state.parrotColor = document.getElementById('parrotColorInput').value || "#4CAF50";
-            alert("Profile Synced!");
+            alert("Profile Ready! 🦜");
         });
 
         window.addEventListener('keydown', e => { 
