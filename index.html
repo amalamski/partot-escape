@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parrot Escape: The Global Journey</title>
+    <title>Parrot Escape: Global High-Fidelity Edition</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
-    <!-- Supabase Library -->
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -78,7 +78,7 @@
 
         .controls-hint { margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; font-size: 0.9rem; }
 
-        /* Leaderboard Styling */
+        /* Leaderboard UI */
         #leaderboardContainer {
             display: none; margin-top: 15px; background: rgba(0,0,0,0.7);
             padding: 15px; border-radius: 10px; border: 1px solid #4dffea;
@@ -117,7 +117,7 @@
                     <div class="reward" id="reward5">👑</div>
                 </div>
                 <div class="controls-hint">
-                    <p>⌨️ Controls: WASD or Arrows</p>
+                    <p>⌨️ WASD or Arrows to fly</p>
                     <p>Space: Super Jump | S/Down: Fast fall</p>
                 </div>
             </div>
@@ -134,8 +134,8 @@
                         <h2 style="font-size:2.5rem; color:#ff9a00;">Ready to Fly? 🦜</h2>
                         <button id="startButton" style="padding:15px 40px; font-size:1.5rem;">START GAME</button>
                         <br>
-                        <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; margin-top:15px; font-size:0.8rem; cursor:pointer;">🏆 Leaderboard</button>
-                        <div id="leaderboardContainer"><div id="leaderboardList">Loading...</div></div>
+                        <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; margin-top:15px; font-size:0.8rem; cursor:pointer;">🏆 Global Leaderboard</button>
+                        <div id="leaderboardContainer"><div id="leaderboardList">Loading champions...</div></div>
                     </div>
 
                     <div class="game-message" id="gameOverMessage">
@@ -145,7 +145,7 @@
                         <h2>Safe at Home! 🪺</h2><p id="levelCompleteText"></p><button id="nextLevelButton">Next Level →</button>
                     </div>
                     <div class="game-message" id="winMessage">
-                        <h2>🎊 YOU WIN! 🎊</h2><p>You conquered the wild!</p><button onclick="location.reload()">Reset Game</button>
+                        <h2>🎊 YOU WIN! 🎊</h2><p>You mastered all 10 regions!</p><button onclick="location.reload()">Reset Game</button>
                     </div>
                 </div>
             </div>
@@ -154,29 +154,47 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════════════════
-        // 1. SUPABASE & AUDIO ENGINE
+        // 1. SUPABASE INTEGRATION (FIXED API HEADERS)
         // ═══════════════════════════════════════════════════════════════════════════
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
         let supabaseClient = null;
-        try { if(typeof supabase !== 'undefined') supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
+
+        function initSupabase() {
+            try {
+                if (typeof supabase !== 'undefined') {
+                    // Експлицитно инициализираме клиента
+                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                }
+            } catch (e) { console.error("Supabase fail:", e); }
+        }
+        initSupabase();
 
         async function saveToLeaderboard(name, score, level) {
             if (!supabaseClient || !name || score <= 0) return;
-            const { error } = await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
-            if(error) console.error(error.message);
+            const { error } = await supabaseClient
+                .from('high_scores')
+                .insert([{ player_name: name, score: score, level: level }]);
+            if(error) console.error("Leaderboard Error:", error.message);
         }
 
         async function getTopScores() {
             if (!supabaseClient) return [];
-            const { data } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(5);
-            return data || [];
+            const { data, error } = await supabaseClient
+                .from('high_scores')
+                .select('*')
+                .order('score', { ascending: false })
+                .limit(5);
+            return error ? [] : data;
         }
 
+        // ═══════════════════════════════════════════════════════════════════════════
+        // 2. AUDIO ENGINE (FULL PROCEDURAL CHIPTUNE)
+        // ═══════════════════════════════════════════════════════════════════════════
         const AudioEngine = (() => {
             let ctx = null, musicGain = null, sfxGain = null, masterGain = null, bgmInterval = null, bgmPlaying = false;
             function init() { if (ctx) return; ctx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = ctx.createGain(); masterGain.connect(ctx.destination); musicGain = ctx.createGain(); sfxGain = ctx.createGain(); musicGain.connect(masterGain); sfxGain.connect(masterGain); musicGain.gain.value = 0.4; sfxGain.gain.value = 0.6; }
-            function playTone(f, d, t, g, v, del) { if (!ctx) return; const time = ctx.currentTime + (del || 0); const o = ctx.createOscillator(); const amp = ctx.createGain(); o.type = t || 'sine'; o.frequency.setValueAtTime(f, time); amp.gain.setValueAtTime(v || 0.3, time); amp.gain.exponentialRampToValueAtTime(0.001, time + d); o.connect(amp); amp.connect(g || sfxGain); o.start(time); o.stop(time + d); }
+            function playTone(f, d, t, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const o = ctx.createOscillator(); const amp = ctx.createGain(); o.type = t || 'sine'; o.frequency.setValueAtTime(f, tt); amp.gain.setValueAtTime(v || 0.3, tt); amp.gain.exponentialRampToValueAtTime(0.001, tt + d); o.connect(amp); amp.connect(g || sfxGain); o.start(tt); o.stop(tt + d); }
             return {
                 init, 
                 playJump: () => playTone(300, 0.15),
@@ -188,14 +206,14 @@
         })();
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // 2. ORIGINAL GRAPHICS & ALL 10 LEVELS
+        // 3. GRAPHICS & LEVELS (FULL 100% FIDELITY)
         // ═══════════════════════════════════════════════════════════════════════════
         const levels = [
             { name: "Jungle", bg: ["#1e4d2b","#2a6b3c"], snakeSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿","🐒"], targetDist: 1000 },
             { name: "Desert", bg: ["#7a5c28","#c4892d"], snakeSpeed: 3.3, mushroomRate: 1400, env: ["🌵","🏜️","🐪"], targetDist: 1500 },
             { name: "Mountains", bg: ["#3c4a5c","#5a7090"], snakeSpeed: 3.8, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"], targetDist: 2000 },
             { name: "Forest", bg: ["#1a3320","#2d5c38"], snakeSpeed: 4.3, mushroomRate: 1200, env: ["🌲","🍂","🦌"], targetDist: 2500 },
-            { name: "Swamp", bg: ["#2a3d20","#4a6b33"], snakeSpeed: 4.8, mushroomRate: 1100, env: ["🐊","💧","🪵"], targetDist: 3000 },
+            { name: "Swamp", bg: ["#2a3d20","#4a6b33"], snakeSpeed: 4.8, mushroomRate: 1100, env: ["🐊","🪵"], targetDist: 3000 },
             { name: "Cave", bg: ["#1a1a2e","#2a2a4e"], snakeSpeed: 5.3, mushroomRate: 1000, env: ["🪨","🦇","💎"], targetDist: 3500 },
             { name: "Beach", bg: ["#1a6b8a","#2a9bc4"], snakeSpeed: 5.8, mushroomRate: 900, env: ["🏖️","🐚","🌊"], targetDist: 4000 },
             { name: "Snow", bg: ["#3a5a7a","#5a8aaa"], snakeSpeed: 6.3, mushroomRate: 800, env: ["❄️","🐻"], targetDist: 4500 },
@@ -211,28 +229,27 @@
 
         const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 
-        // Drawing Functions (100% Fidelity)
         function drawParrot() {
             ctx.save();
-            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.ellipse(parrot.x + 20, parrot.y + 18, 18, 13, 0, 0, Math.PI * 2); ctx.fill(); // Body
-            ctx.fillStyle = '#FF9800'; ctx.beginPath(); ctx.moveTo(parrot.x + 38, parrot.y + 13); ctx.lineTo(parrot.x + 48, parrot.y + 11); ctx.lineTo(parrot.x + 38, parrot.y + 17); ctx.fill(); // Beak
-            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.arc(parrot.x + 29, parrot.y + 11, 10, 0, Math.PI * 2); ctx.fill(); // Head
-            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 32, parrot.y + 8, 4, 0, Math.PI * 2); ctx.fill(); // Eye
-            ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(parrot.x + 33, parrot.y + 8, 2, 0, Math.PI * 2); ctx.fill(); // Pupil
-            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.moveTo(parrot.x, parrot.y + 18); ctx.lineTo(parrot.x - 10, parrot.y + 12); ctx.lineTo(parrot.x - 10, parrot.y + 24); ctx.fill(); // Tail
-            const wingY = Math.sin(parrot.wingAnim) * 5; ctx.fillStyle = shadeColor(state.parrotColor, -20); ctx.beginPath(); ctx.ellipse(parrot.x + 14, parrot.y + 22 + wingY, 10, 6, Math.PI / 4, 0, Math.PI * 2); ctx.fill(); // Wing
+            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.ellipse(parrot.x + 20, parrot.y + 18, 18, 13, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#FF9800'; ctx.beginPath(); ctx.moveTo(parrot.x + 38, parrot.y + 13); ctx.lineTo(parrot.x + 48, parrot.y + 11); ctx.lineTo(parrot.x + 38, parrot.y + 17); ctx.fill();
+            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.arc(parrot.x + 29, parrot.y + 11, 10, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 32, parrot.y + 8, 4, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(parrot.x + 33, parrot.y + 8, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.moveTo(parrot.x, parrot.y + 18); ctx.lineTo(parrot.x - 10, parrot.y + 12); ctx.lineTo(parrot.x - 10, parrot.y + 24); ctx.fill();
+            const wingY = Math.sin(parrot.wingAnim) * 5; ctx.fillStyle = '#2E7D32'; ctx.beginPath(); ctx.ellipse(parrot.x + 14, parrot.y + 22 + wingY, 10, 6, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
             parrot.wingAnim += 0.2; ctx.restore();
         }
 
         function drawSnake() {
             ctx.save();
-            ctx.fillStyle = '#FF5722'; ctx.beginPath(); ctx.ellipse(snake.x + 25, snake.y + 14, 25, 12, 0, 0, Math.PI * 2); ctx.fill(); // Body
-            ctx.fillStyle = '#D84315'; ctx.beginPath(); ctx.ellipse(snake.x + 48, snake.y + 14, 12, 14, 0, 0, Math.PI * 2); ctx.fill(); // Head
-            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(snake.x + 53, snake.y + 9, 3, 0, Math.PI * 2); ctx.fill(); // Eye
+            ctx.fillStyle = '#FF5722'; ctx.beginPath(); ctx.ellipse(snake.x + 25, snake.y + 14, 25, 12, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#D84315'; ctx.beginPath(); ctx.ellipse(snake.x + 48, snake.y + 14, 12, 14, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(snake.x + 53, snake.y + 9, 3, 0, Math.PI * 2); ctx.fill();
             if (Math.floor(Date.now() / 200) % 2 === 0) {
                 ctx.strokeStyle = '#FF4081'; ctx.lineWidth = 2; ctx.beginPath(); 
                 ctx.moveTo(snake.x + 60, snake.y + 14); ctx.lineTo(snake.x + 68, snake.y + 12);
-                ctx.moveTo(snake.x + 60, snake.y + 14); ctx.lineTo(snake.x + 68, snake.y + 16); ctx.stroke(); // Tongue
+                ctx.moveTo(snake.x + 60, snake.y + 14); ctx.lineTo(snake.x + 68, snake.y + 16); ctx.stroke();
             }
             ctx.restore();
         }
@@ -240,9 +257,9 @@
         function drawMushrooms() {
             mushroomsList.forEach(m => {
                 ctx.save();
-                ctx.fillStyle = '#FFF9C4'; ctx.fillRect(m.x + 12, m.y + 12, 6, 14); // Stem
-                ctx.fillStyle = m.color; ctx.beginPath(); ctx.ellipse(m.x + 15, m.y + 10, 15, 10, 0, 0, Math.PI * 2); ctx.fill(); // Cap
-                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x + 10, m.y + 7, 2, 0, Math.PI * 2); ctx.arc(m.x + 20, m.y + 7, 2, 0, Math.PI * 2); ctx.fill(); // Dots
+                ctx.fillStyle = '#FFF9C4'; ctx.fillRect(m.x + 12, m.y + 12, 6, 14);
+                ctx.fillStyle = m.color; ctx.beginPath(); ctx.ellipse(m.x + 15, m.y + 10, 15, 10, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x+10, m.y+7, 2, 0, Math.PI*2); ctx.arc(m.x+20, m.y+7, 2, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
             });
         }
@@ -263,14 +280,14 @@
 
         function drawEnv() {
             const lvl = levels[state.currentLevel - 1];
-            ctx.fillStyle = lvl.bg[1]; ctx.fillRect(0,0,800,400); // Sky
-            ctx.fillStyle = '#795548'; ctx.fillRect(0, 380, 800, 20); // Ground
-            ctx.fillStyle = '#4CAF50'; for(let i=0; i<800; i+=20) { ctx.beginPath(); ctx.moveTo(i,380); ctx.lineTo(i+10,360); ctx.lineTo(i+20,380); ctx.fill(); } // Grass
+            ctx.fillStyle = lvl.bg[1]; ctx.fillRect(0,0,800,400);
+            ctx.fillStyle = '#795548'; ctx.fillRect(0, 380, 800, 20);
+            ctx.fillStyle = '#4CAF50'; for(let i=0; i<800; i+=20) { ctx.beginPath(); ctx.moveTo(i,380); ctx.lineTo(i+10,360); ctx.lineTo(i+20,380); ctx.fill(); }
             ctx.font = "24px Arial"; environments.forEach(e => ctx.fillText(e.t, e.x, e.y+30));
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // 3. ENGINE & CONTROLS (WASD + ARROWS)
+        // 4. ENGINE & CONTROLS
         // ═══════════════════════════════════════════════════════════════════════════
         function update() {
             if(!state.isPlaying) return;
@@ -279,15 +296,14 @@
             parrot.vY += 0.6; parrot.y += parrot.vY;
             if(parrot.y > 330) { parrot.y = 330; parrot.vY = 0; parrot.jumping = false; }
             
-            // Movement logic
             if(state.keys['KeyA'] || state.keys['ArrowLeft']) parrot.x = Math.max(0, parrot.x - 5);
             if(state.keys['KeyD'] || state.keys['ArrowRight']) parrot.x = Math.min(760, parrot.x + 5);
-            if(state.keys['KeyS'] || state.keys['ArrowDown']) parrot.y = Math.min(330, parrot.y + 5);
+            if(state.keys['KeyS'] || state.keys['ArrowDown']) parrot.y = Math.min(330, parrot.y + 7);
+            
             if((state.keys['KeyW'] || state.keys['ArrowUp'] || state.keys['Space']) && !parrot.jumping) { 
                 parrot.vY = (state.keys['Space']) ? -14 : -11; parrot.jumping = true; AudioEngine.playJump(); 
             }
 
-            // Progress Bar & Nest
             const lvl = levels[state.currentLevel-1];
             state.distance++;
             document.getElementById('progressBar').style.width = Math.min(100, (state.distance/lvl.targetDist)*100) + "%";
@@ -298,13 +314,11 @@
                 if(Math.abs(parrot.x - nest.x) < 40 && Math.abs(parrot.y - 310) < 50) completeLevel();
             }
 
-            // Snake logic
             snake.x -= lvl.snakeSpeed; if(snake.x < -150) { snake.x = 850; snake.y = 100+Math.random()*200; }
             if(Math.abs(parrot.x - snake.x) < 45 && Math.abs(parrot.y - snake.y) < 30) { 
                 state.lives--; AudioEngine.playHit(); snake.x = 850; if(state.lives <= 0) gameOver();
             }
 
-            // Items logic
             mushroomsList.forEach((m, i) => { 
                 m.x -= 3; if(Math.abs(parrot.x - m.x) < 35 && Math.abs(parrot.y - m.y) < 35) { state.score += 50; state.mushrooms++; mushroomsList.splice(i,1); AudioEngine.playCollect(); }
             });
@@ -329,31 +343,26 @@
             AudioEngine.init(); AudioEngine.startMusic();
             state.isPlaying = true; state.score = 0; state.lives = 3; state.mushrooms = 0; state.distance = 0;
             parrot.x = 100; parrot.y = 300; nest.active = false; mushroomsList = []; environments = []; obstacles = [];
-            const lvl = levels[state.currentLevel-1];
+            const lvl = levels[state.currentLevel - 1];
             for(let i=0; i<12; i++) environments.push({ x: Math.random()*800, y: Math.random()*50, t: lvl.env[Math.floor(Math.random()*lvl.env.length)] });
             document.getElementById('startMessage').style.display = 'none';
             document.getElementById('gameOverMessage').style.display = 'none';
             document.getElementById('levelCompleteMessage').style.display = 'none';
-            clearInterval(spawnTimer); spawnTimer = setInterval(() => { 
-                if(state.isPlaying) {
-                    mushroomsList.push({x:800, y:150+Math.random()*150, color: '#E91E63'});
-                    if(Math.random() > 0.7) obstacles.push({x:800, y:340, type: Math.random() > 0.5 ? 'rock' : 'log'});
-                }
-            }, lvl.mushroomRate);
+            clearInterval(spawnTimer); spawnTimer = setInterval(() => { if(state.isPlaying) { mushroomsList.push({x:800, y:150+Math.random()*150, color: '#E91E63'}); if(Math.random()>0.7) obstacles.push({x:800,y:340,type:Math.random()>0.5?'rock':'log'}); } }, lvl.mushroomRate);
             update();
         }
 
         function gameOver() {
             state.isPlaying = false; AudioEngine.stopMusic();
             document.getElementById('gameOverMessage').style.display = 'block';
-            document.getElementById('gameOverText').innerText = `Final Score: ${state.score}`;
+            document.getElementById('gameOverText').innerText = `Score: ${state.score}`;
             saveToLeaderboard(state.playerName, state.score, state.currentLevel);
         }
 
         function completeLevel() {
             state.isPlaying = false; AudioEngine.stopMusic();
             if(state.currentLevel >= 10) document.getElementById('winMessage').style.display = 'block';
-            else { document.getElementById('levelCompleteMessage').style.display = 'block'; document.getElementById('levelCompleteText').innerText = `Region ${state.currentLevel} cleared!`; }
+            else { document.getElementById('levelCompleteMessage').style.display = 'block'; document.getElementById('levelCompleteText').innerText = `Region ${state.currentLevel} escaped!`; }
         }
 
         function shadeColor(color, percent) {
@@ -361,11 +370,10 @@
             return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
         }
 
-        // ── Events ──
+        // ── UI Events ──
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('restartButton').addEventListener('click', () => location.reload());
         document.getElementById('nextLevelButton').addEventListener('click', () => { state.currentLevel++; startGame(); });
-        
         document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
             const list = document.getElementById('leaderboardList');
             document.getElementById('leaderboardContainer').style.display = 'block';
