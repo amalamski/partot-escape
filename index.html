@@ -4,230 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parrot Escape: Run from the Snake!</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
     <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
-            user-select: none;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            overflow-x: hidden;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        header {
-            text-align: center;
-            padding: 15px;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 20px;
-            border: 3px solid #ff9a00;
-            box-shadow: 0 0 20px rgba(255, 154, 0, 0.5);
-        }
-
-        h1 {
-            font-size: 2.8rem;
-            color: #ff9a00;
-            text-shadow: 3px 3px 0 #ff3d00;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: #4dffea;
-        }
-
-        .game-area {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .left-panel {
-            flex: 1;
-            min-width: 300px;
-            background: rgba(0, 20, 40, 0.8);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid #00b4d8;
-        }
-
-        .right-panel {
-            flex: 2;
-            min-width: 500px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .screen {
-            background: #0f3460;
-            border-radius: 15px;
-            padding: 15px;
-            border: 3px solid #ff9a00;
-            position: relative;
-            overflow: hidden;
-            min-height: 400px;
-        }
-
-        #gameCanvas {
-            background: linear-gradient(to bottom, #1e3c72 0%, #2a5298 100%);
-            border-radius: 10px;
-            width: 100%;
-            height: 400px;
-            display: block;
-        }
-
-        .profile-section {
-            margin-bottom: 20px;
-        }
-
-        .profile-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        input {
-            padding: 10px;
-            border-radius: 8px;
-            border: 2px solid #00b4d8;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1rem;
-        }
-
-        button {
-            padding: 12px 20px;
-            border-radius: 10px;
-            border: none;
-            background: linear-gradient(to right, #ff9a00, #ff3d00);
-            color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 5px 0;
-        }
-
-        button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(255, 61, 0, 0.7);
-        }
-
-        #showLeaderboardBtn {
-            background: transparent;
-            border: 1px solid #4dffea;
-            color: #4dffea;
-            font-size: 0.9rem;
-            margin-top: 10px;
-            padding: 8px;
-        }
-
-        #leaderboardContainer {
-            display: none;
-            margin-top: 15px;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #ff9a00;
-            font-size: 0.85rem;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-
-        .score-row {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(77, 255, 234, 0.2);
-            padding: 5px 0;
-        }
-
+        /* ВРЪЩАМ ЦЕЛИЯ ОРИГИНАЛЕН СТИЛ */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Comic Sans MS', 'Chalkboard SE', cursive; user-select: none; }
+        body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-x: hidden; }
+        .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        header { text-align: center; padding: 15px; width: 100%; background: rgba(0, 0, 0, 0.5); border-radius: 20px; border: 3px solid #ff9a00; box-shadow: 0 0 20px rgba(255, 154, 0, 0.5); }
+        h1 { font-size: 2.8rem; color: #ff9a00; text-shadow: 3px 3px 0 #ff3d00; margin-bottom: 10px; }
+        .subtitle { font-size: 1.2rem; color: #4dffea; }
+        .game-area { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; justify-content: center; }
+        .left-panel { flex: 1; min-width: 300px; background: rgba(0, 20, 40, 0.8); border-radius: 15px; padding: 20px; border: 2px solid #00b4d8; }
+        .right-panel { flex: 2; min-width: 500px; display: flex; flex-direction: column; gap: 20px; }
+        .screen { background: #0f3460; border-radius: 15px; padding: 15px; border: 3px solid #ff9a00; position: relative; overflow: hidden; min-height: 400px; }
+        #gameCanvas { background: linear-gradient(to bottom, #1e3c72 0%, #2a5298 100%); border-radius: 10px; width: 100%; height: 400px; display: block; }
+        .profile-form { display: flex; flex-direction: column; gap: 10px; }
+        input { padding: 10px; border-radius: 8px; border: 2px solid #00b4d8; background: rgba(255, 255, 255, 0.1); color: white; font-size: 1rem; }
+        button { padding: 12px 20px; border-radius: 10px; border: none; background: linear-gradient(to right, #ff9a00, #ff3d00); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: all 0.3s; margin: 5px 0; }
+        button:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(255, 61, 0, 0.7); }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .stat-box { background: rgba(0, 40, 80, 0.7); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #4dffea; }
+        .stat-value { font-size: 2rem; color: #ff9a00; font-weight: bold; }
+        .key { display: inline-block; width: 50px; height: 50px; background: #333; color: white; border-radius: 8px; text-align: center; line-height: 50px; margin: 5px; font-weight: bold; border: 2px solid #666; box-shadow: 0 4px 0 #222; }
+        .key.active { background: #ff9a00; transform: translateY(4px); box-shadow: 0 0 0 #222; }
+        .music-control { position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; z-index: 300; }
+        .volume-slider-container { position: absolute; top: 55px; right: 10px; background: rgba(0, 0, 0, 0.8); padding: 8px 12px; border-radius: 10px; z-index: 300; display: none; flex-direction: column; gap: 6px; font-size: 0.75rem; color: #4dffea; border: 1px solid #00b4d8; }
+        .volume-slider-container.show { display: flex; }
+        .level-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.7); padding: 10px 20px; border-radius: 20px; font-weight: bold; color: #ff9a00; z-index: 300; }
+        .rewards { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; justify-content: center; }
+        .reward { font-size: 2rem; filter: grayscale(1); transition: all 0.3s; }
+        .reward.unlocked { filter: grayscale(0); transform: scale(1.2); }
+        .game-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); padding: 30px; border-radius: 20px; text-align: center; border: 3px solid #ff9a00; z-index: 200; display: none; width: 80%; }
+        .health-bar-container { position: absolute; bottom: 20px; left: 15px; z-index: 300; background: rgba(0,0,0,0.6); border-radius: 10px; padding: 5px 10px; font-size: 0.8rem; color: #fff; }
+        
+        /* Leaderboard Styles */
+        .leaderboard-btn { background: transparent; border: 1px solid #4dffea; color: #4dffea; font-size: 0.9rem; margin-top: 10px; }
+        .leaderboard-wrap { display: none; margin-top: 15px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; border: 1px solid #ff9a00; max-height: 150px; overflow-y: auto; text-align: left; }
+        .score-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(77,255,234,0.1); padding: 4px 0; font-size: 0.8rem; }
         .score-name { color: #ff9a00; font-weight: bold; }
-        .score-val { color: #4dffea; }
-
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .stat-box {
-            background: rgba(0, 40, 80, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid #4dffea;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            color: #ff9a00;
-            font-weight: bold;
-        }
-
-        .music-control {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.5rem;
-            z-index: 300;
-        }
-
-        .game-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            border: 3px solid #ff9a00;
-            z-index: 200;
-            display: none;
-            width: 80%;
-        }
-
-        .health-bar-container {
-            position: absolute;
-            bottom: 20px;
-            left: 15px;
-            z-index: 300;
-            background: rgba(0,0,0,0.6);
-            border-radius: 10px;
-            padding: 5px 10px;
-            font-size: 0.8rem;
-            color: #fff;
-        }
     </style>
 </head>
 <body>
@@ -245,29 +60,62 @@
                         <input type="text" id="playerName" placeholder="Enter parrot name" maxlength="15">
                         <input type="text" id="parrotColor" placeholder="Favorite color (e.g., green)" maxlength="10">
                         <button id="saveProfile">Save Profile</button>
+                        <button id="loadProfile">Load Progress</button>
                     </div>
                     <div class="stats">
                         <div class="stat-box"><div>Level</div><div class="stat-value" id="currentLevel">1</div></div>
                         <div class="stat-box"><div>Score</div><div class="stat-value" id="currentScore">0</div></div>
+                        <div class="stat-box"><div>Mushrooms</div><div class="stat-value" id="mushroomCount">0</div></div>
+                        <div class="stat-box"><div>Time Bonus</div><div class="stat-value" id="timeBonus">1.0x</div></div>
                     </div>
+                </div>
+
+                <div class="rewards-section">
+                    <h2>🏆 Rewards</h2>
+                    <div class="rewards">
+                        <div class="reward" id="reward1">🥉</div>
+                        <div class="reward" id="reward2">🥈</div>
+                        <div class="reward" id="reward3">🥇</div>
+                        <div class="reward" id="reward4">🏆</div>
+                        <div class="reward" id="reward5">👑</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <h2>🎮 Controls</h2>
+                    <div style="margin-bottom:6px;"><span class="key" id="keyW">W</span> Jump</div>
+                    <div style="margin-bottom:6px;"><span class="key" id="keyA">A</span> <span class="key" id="keyS">S</span> <span class="key" id="keyD">D</span> Move</div>
+                    <div style="margin-bottom:6px;"><span class="key" id="keySpace" style="width:80px;">SPACE</span> Super Jump</div>
                 </div>
             </div>
 
             <div class="right-panel">
                 <div class="screen">
+                    <div class="level-indicator" id="levelIndicator">Level 1: Jungle 🌴</div>
                     <div class="music-control" id="musicToggle">🔊</div>
+                    <div class="volume-slider-container" id="volumePanel">
+                        <label>🎵 Music <input type="range" id="musicVolume" min="0" max="100" value="40"></label>
+                        <label>🔊 SFX <input type="range" id="sfxVolume" min="0" max="100" value="60"></label>
+                    </div>
+
                     <canvas id="gameCanvas" width="800" height="400"></canvas>
+
                     <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
-                    <!-- СЪОБЩЕНИЯ -->
                     <div class="game-message" id="startMessage">
                         <h2>Ready to Fly? 🦜</h2>
+                        <p>Escape the snake, collect mushrooms!</p>
                         <button id="startButton">START GAME</button>
                         <br>
-                        <button id="showLeaderboardBtn">🏆 Класация (Топ 10)</button>
-                        <div id="leaderboardContainer">
+                        <button id="showLeaderboardBtn" class="leaderboard-btn">🏆 Класация (Топ 10)</button>
+                        <div id="leaderboardContainer" class="leaderboard-wrap">
                             <div id="leaderboardList">Зареждане...</div>
                         </div>
+                    </div>
+
+                    <div class="game-message" id="levelCompleteMessage">
+                        <h2>Level Complete! 🎉</h2>
+                        <button id="nextLevelButton">Next Level →</button>
                     </div>
 
                     <div class="game-message" id="gameOverMessage">
@@ -280,16 +128,11 @@
     </div>
 
     <script>
-        // ══ SUPABASE CONFIG (SAFE BOOT) ══
+        // ══ SUPABASE CONFIG (SAFE) ══
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
         let supabaseClient = null;
-
-        try {
-            if (typeof supabase !== 'undefined') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        } catch (e) { console.error("Cloud Error:", e); }
+        try { if (typeof supabase !== 'undefined') { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } } catch(e){}
 
         async function saveToLeaderboard(name, score, level) {
             if (!supabaseClient || !name || score <= 0) return;
@@ -304,95 +147,152 @@
 
         // ══ AUDIO ENGINE ══
         const AudioEngine = (() => {
-            let ctx = null, sfxGain = null;
-            function init() {
-                if (ctx) return;
-                ctx = new (window.AudioContext || window.webkitAudioContext)();
-                sfxGain = ctx.createGain(); sfxGain.connect(ctx.destination);
-            }
-            return { 
+            let ctx = null, musicGain = null, sfxGain = null, masterGain = null, bgmPlaying = false, bgmInterval = null, muted = false;
+            function init() { if (ctx) return; ctx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = ctx.createGain(); masterGain.connect(ctx.destination); musicGain = ctx.createGain(); musicGain.gain.value = 0.4; musicGain.connect(masterGain); sfxGain = ctx.createGain(); sfxGain.gain.value = 0.6; sfxGain.connect(masterGain); }
+            function playTone(f, d, t, g, v, det, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const o = ctx.createOscillator(); const gg = ctx.createGain(); o.type = t || 'sine'; o.frequency.setValueAtTime(f, tt); gg.gain.setValueAtTime(v || 0.3, tt); gg.gain.exponentialRampToValueAtTime(0.001, tt + d); o.connect(gg); gg.connect(g || sfxGain); o.start(tt); o.stop(tt + d); }
+            function playNoise(d, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const buf = ctx.createBuffer(1, ctx.sampleRate * d, ctx.sampleRate); const dat = buf.getChannelData(0); for (let i = 0; i < dat.length; i++) dat[i] = Math.random() * 2 - 1; const src = ctx.createBufferSource(); src.buffer = buf; const gg = ctx.createGain(); gg.gain.setValueAtTime(v || 0.1, tt); gg.gain.exponentialRampToValueAtTime(0.001, tt + d); src.connect(gg); gg.connect(g || sfxGain); src.start(tt); }
+            
+            return {
                 init, 
-                playJump: () => {
-                    if(!ctx) return;
-                    const o = ctx.createOscillator(); const g = ctx.createGain();
-                    o.frequency.setValueAtTime(400, ctx.currentTime);
-                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-                    o.connect(g); g.connect(sfxGain); o.start(); o.stop(ctx.currentTime + 0.2);
-                }
+                setMusicVolume: (v) => musicGain.gain.value = v, 
+                setSfxVolume: (v) => sfxGain.gain.value = v,
+                playJump: () => { init(); playTone(300, 0.15); },
+                playSuperJump: () => { init(); playTone(400, 0.15, 'square'); },
+                playCollect: (val) => { init(); playTone(val >= 50 ? 800 : 500, 0.1); },
+                playSnakeHit: () => { init(); playTone(150, 0.3, 'sawtooth'); playNoise(0.2); },
+                playGameOver: () => { init(); [440, 330, 220].forEach((f, i) => playTone(f, 0.5, 'sawtooth', sfxGain, 0.2, 0, i * 0.2)); },
+                startMusic: (lvl) => { 
+                    init(); bgmPlaying = true; 
+                    const notes = [262, 330, 392, 523];
+                    bgmInterval = setInterval(() => { if(!bgmPlaying) return; playTone(notes[Math.floor(Math.random()*4)], 0.5, 'triangle', musicGain, 0.1); }, 500);
+                },
+                stopMusic: () => { bgmPlaying = false; clearInterval(bgmInterval); }
             };
         })();
 
-        // ══ GAME LOGIC ══
-        const gameState = { currentLevel: 1, score: 0, isPlaying: false, playerName: "Parrot", parrotColor: "#4CAF50", keys: {} };
+        // ══ GAME STATE ══
+        const gameState = { currentLevel: 1, score: 0, mushroomsCollected: 0, lives: 3, playerName: "Parrot", parrotColor: "#4CAF50", isPlaying: false, keys: {}, mushroomMultiplier: 1.0, lastMushroomTime: Date.now() };
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let parrot = { x: 80, y: 310, vY: 0 };
-        let snake = { x: 850, y: 310, speed: 3 };
+        const levels = [
+            { name: "Jungle", snakeSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿"] },
+            { name: "Desert", snakeSpeed: 3.5, mushroomRate: 1300, env: ["🌵","🏜️"] }
+        ];
+
+        let parrot, snake, mushrooms = [], obstacles = [], environments = [];
+        let gameInterval, mushroomInterval;
 
         function initGame() {
+            parrot = { x: 80, y: 310, w: 40, h: 35, vY: 0, jumping: false };
+            snake = { x: 850, y: 310, w: 70, h: 30, speed: levels[0].snakeSpeed };
             document.getElementById('startMessage').style.display = 'block';
-            ctx.fillStyle = "#1e3c72"; ctx.fillRect(0,0,800,400);
-            ctx.fillStyle = "#5d3a1a"; ctx.fillRect(0, 365, 800, 35);
+            draw();
         }
 
-        function updateGame() {
-            if (!gameState.isPlaying) return;
-            ctx.clearRect(0, 0, 800, 400);
-            ctx.fillStyle = "#1e3c72"; ctx.fillRect(0,0,800,400);
-            ctx.fillStyle = "#5d3a1a"; ctx.fillRect(0, 365, 800, 35);
+        function startGame() {
+            document.getElementById('startMessage').style.display = 'none';
+            document.getElementById('gameOverMessage').style.display = 'none';
+            gameState.isPlaying = true; gameState.score = 0; gameState.lives = 3;
+            parrot = { x: 80, y: 310, w: 40, h: 35, vY: 0, jumping: false };
+            snake = { x: 850, y: 310, w: 70, h: 30, speed: levels[gameState.currentLevel-1].snakeSpeed };
+            mushrooms = [];
+            
+            AudioEngine.stopMusic();
+            AudioEngine.startMusic();
+            
+            clearInterval(gameInterval); clearInterval(mushroomInterval);
+            gameInterval = setInterval(update, 1000/60);
+            mushroomInterval = setInterval(spawnMushroom, 1500);
+        }
 
+        function update() {
+            if(!gameState.isPlaying) return;
+            
+            // Physics
             parrot.vY += 0.6; parrot.y += parrot.vY;
-            if (parrot.y > 330) { parrot.y = 330; parrot.vY = 0; }
-            if (gameState.keys['Space'] && parrot.y >= 330) { parrot.vY = -13; AudioEngine.playJump(); }
+            if(parrot.y > 330) { parrot.y = 330; parrot.vY = 0; parrot.jumping = false; }
+            if(gameState.keys['Space'] && !parrot.jumping) { parrot.vY = -14; parrot.jumping = true; AudioEngine.playSuperJump(); }
+            if(gameState.keys['KeyW'] && !parrot.jumping) { parrot.vY = -11; parrot.jumping = true; AudioEngine.playJump(); }
 
             snake.x -= snake.speed;
-            if (snake.x < -50) snake.x = 850;
+            if(snake.x < -100) snake.x = 900;
 
-            if (Math.abs(parrot.x - snake.x) < 30 && Math.abs(parrot.y - snake.y) < 30) { gameOver(); }
+            // Collision
+            let d = Math.sqrt((parrot.x - snake.x)**2 + (parrot.y - snake.y)**2);
+            if(d < 35) { 
+                gameState.lives--; 
+                AudioEngine.playSnakeHit();
+                snake.x = 900;
+                if(gameState.lives <= 0) gameOver();
+            }
 
-            ctx.fillStyle = gameState.parrotColor; ctx.beginPath(); ctx.arc(parrot.x+20, parrot.y+15, 15, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = "red"; ctx.beginPath(); ctx.ellipse(snake.x+20, snake.y+15, 25, 10, 0, 0, Math.PI*2); ctx.fill();
+            // Mushrooms
+            mushrooms.forEach((m, i) => {
+                m.x -= 3;
+                if(Math.sqrt((parrot.x - m.x)**2 + (parrot.y - m.y)**2) < 30) {
+                    gameState.score += 50; gameState.mushroomsCollected++;
+                    mushrooms.splice(i, 1); AudioEngine.playCollect(50);
+                }
+            });
 
-            gameState.score++;
-            document.getElementById('currentScore').innerText = gameState.score;
-            requestAnimationFrame(updateGame);
+            draw();
+            updateHUD();
+        }
+
+        function spawnMushroom() {
+            mushrooms.push({ x: 850, y: 100 + Math.random() * 200 });
+        }
+
+        function draw() {
+            ctx.clearRect(0,0,800,400);
+            // Sky
+            ctx.fillStyle = "#1e3c72"; ctx.fillRect(0,0,800,400);
+            // Ground
+            ctx.fillStyle = "#5d3a1a"; ctx.fillRect(0, 365, 800, 35);
+            // Parrot
+            ctx.fillStyle = gameState.parrotColor; ctx.beginPath(); ctx.arc(parrot.x+20, parrot.y+15, 18, 0, Math.PI*2); ctx.fill();
+            // Snake
+            ctx.fillStyle = "#ff3d00"; ctx.beginPath(); ctx.ellipse(snake.x+35, snake.y+15, 35, 12, 0, 0, Math.PI*2); ctx.fill();
+            // Mushrooms
+            ctx.fillStyle = "#FF9800"; mushrooms.forEach(m => { ctx.beginPath(); ctx.arc(m.x, m.y, 10, 0, Math.PI*2); ctx.fill(); });
         }
 
         function gameOver() {
             gameState.isPlaying = false;
+            AudioEngine.stopMusic(); AudioEngine.playGameOver();
             saveToLeaderboard(gameState.playerName, gameState.score, gameState.currentLevel);
             document.getElementById('gameOverMessage').style.display = 'block';
         }
 
-        // ══ EVENTS ══
-        document.getElementById('startButton').addEventListener('click', () => {
-            AudioEngine.init();
-            document.getElementById('startMessage').style.display = 'none';
-            gameState.isPlaying = true; gameState.score = 0;
-            updateGame();
-        });
+        function updateHUD() {
+            document.getElementById('currentScore').innerText = gameState.score;
+            document.getElementById('livesDisplay').innerText = gameState.lives;
+            document.getElementById('mushroomCount').innerText = gameState.mushroomsCollected;
+        }
 
+        // ══ UI EVENTS ══
+        document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('restartButton').addEventListener('click', () => location.reload());
-
+        
         document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
             const container = document.getElementById('leaderboardContainer');
-            const list = document.getElementById('leaderboardList');
-            if (container.style.display === 'block') { container.style.display = 'none'; return; }
+            if(container.style.display === 'block') { container.style.display = 'none'; return; }
             container.style.display = 'block';
+            const list = document.getElementById('leaderboardList');
             list.innerHTML = "Зареждане...";
             const scores = await getTopScores();
-            list.innerHTML = scores.length ? scores.map((s, i) => `<div class="score-row"><span>${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('') : "Няма записи.";
+            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('');
         });
 
         document.getElementById('saveProfile').addEventListener('click', () => {
-            const n = document.getElementById('playerName').value;
-            if (n) { gameState.playerName = n; alert("Името е запазено!"); }
+            gameState.playerName = document.getElementById('playerName').value || "Parrot";
+            gameState.parrotColor = document.getElementById('parrotColor').value || "#4CAF50";
+            alert("Saved!");
         });
 
         window.addEventListener('keydown', e => gameState.keys[e.code] = true);
         window.addEventListener('keyup', e => gameState.keys[e.code] = false);
 
-        // СТАРТ
         initGame();
     </script>
 </body>
