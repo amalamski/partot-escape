@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parrot Escape: Run from the Snake!</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
-    <!-- Supabase SDK -->
+    <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -101,6 +101,10 @@
             display: block;
         }
 
+        .profile-section {
+            margin-bottom: 20px;
+        }
+
         .profile-form {
             display: flex;
             flex-direction: column;
@@ -153,6 +157,13 @@
             font-size: 2rem;
             color: #ff9a00;
             font-weight: bold;
+        }
+
+        .controls {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
         }
 
         .key {
@@ -264,7 +275,7 @@
             color: #fff;
         }
 
-        /* Leaderboard Styling */
+        /* Leaderboard Specific Styling */
         #leaderboardContainer {
             display: none;
             margin-top: 15px;
@@ -323,11 +334,14 @@
                     </div>
                 </div>
 
-                <div class="controls" style="margin-top:20px; background:rgba(0,0,0,0.4); padding:15px; border-radius:15px;">
+                <div class="controls">
                     <h2>🎮 Controls</h2>
-                    <p>W / ↑ / Space: Jump</p>
-                    <p>A / D: Move Left/Right</p>
-                    <p>P: Pause | M: Mute</p>
+                    <p style="margin-bottom:8px;">Use these keys to control your parrot:</p>
+                    <div style="margin-bottom:6px;"><span class="key" id="keyW">W</span> Jump</div>
+                    <div style="margin-bottom:6px;"><span class="key" id="keyA">A</span> <span class="key" id="keyS">S</span> <span class="key" id="keyD">D</span> Move Left/Down/Right</div>
+                    <div style="margin-bottom:6px;"><span class="key" id="keySpace" style="width:100px;">SPACE</span> Super Jump</div>
+                    <div style="margin-bottom:6px;"><span class="key" id="keyP">P</span> Pause</div>
+                    <div><span class="key" id="keyM">M</span> Mute</div>
                 </div>
             </div>
 
@@ -344,11 +358,11 @@
 
                     <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
-                    <!-- START MESSAGE -->
+                    <!-- MESSAGES -->
                     <div class="game-message" id="startMessage">
                         <h2 style="font-size:2.5rem; color:#ff9a00;">Ready to Fly? 🦜</h2>
                         <p>Escape the snake, collect mushrooms, reach level 10!</p>
-                        <button id="startButton" style="width:250px; font-size:1.5rem;">START GAME</button>
+                        <button id="startButton" style="padding:15px 40px; font-size:1.5rem;">START GAME</button>
                         <br>
                         <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; margin-top:15px; padding:8px;">🏆 Global High Scores</button>
                         <div id="leaderboardContainer">
@@ -370,9 +384,17 @@
 
                     <div class="game-message" id="winMessage">
                         <h2>🎊 YOU WIN! 🎊</h2>
-                        <p id="winText"></p>
+                        <p id="winText">Congratulations! You completed all 10 levels!</p>
                         <button id="playAgainButton">Play Again</button>
                     </div>
+                </div>
+                <div class="instructions" style="margin-top:10px; background:rgba(0,20,40,0.8); border-radius:15px; padding:15px; border:2px solid #00b4d8;">
+                    <h3>📜 How to Play</h3>
+                    <ul>
+                        <li>🍄 Collect mushrooms for points (10–50 pts)</li>
+                        <li>🐍 Avoid the snake — it tracks you!</li>
+                        <li>🏁 Reach the right edge to finish the level</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -380,7 +402,7 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════════════════
-        // SUPABASE INTEGRATION
+        // SUPABASE INTEGRATION (FIXED naming to avoid collision)
         // ═══════════════════════════════════════════════════════════════════════════
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
@@ -390,13 +412,13 @@
             if (typeof supabase !== 'undefined') {
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
-        } catch (e) { console.error("Cloud connection failed."); }
+        } catch (e) { console.warn("Supabase not loaded."); }
 
         async function saveToLeaderboard(name, score, level) {
             if (!supabaseClient || !name || score <= 0) return;
             try {
                 await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
-            } catch (e) {}
+            } catch (e) { console.error("Error saving score:", e); }
         }
 
         async function getTopScores() {
@@ -448,7 +470,7 @@
                 init, 
                 setMusicVolume: v => musicGain.gain.value = v,
                 setSfxVolume: v => sfxGain.gain.value = v,
-                toggleMute: () => { muted = !muted; masterGain.gain.value = muted ? 0 : 1; return muted; },
+                toggleMute: () => { muted = !muted; if(masterGain) masterGain.gain.value = muted ? 0 : 1; return muted; },
                 playJump: () => playTone(300, 0.15),
                 playSuperJump: () => { playTone(400, 0.1, 'square'); playTone(600, 0.1, 'square', null, 0.2, 0.05); },
                 playCollect: (val) => { playTone(val >= 50 ? 800 : 500, 0.08); playTone(val >= 50 ? 1200 : 700, 0.1, 'sine', null, 0.2, 0.05); },
@@ -456,7 +478,7 @@
                 playGameOver: () => { [440, 349, 262].forEach((f, i) => playTone(f, 0.5, 'sawtooth', sfxGain, 0.2, i * 0.25)); },
                 playWin: () => { [523, 659, 784, 1047].forEach((f, i) => playTone(f, 0.4, 'sine', sfxGain, 0.3, i * 0.15)); },
                 startMusic: (lvlIdx) => {
-                    init(); bgmPlaying = true; clearInterval(bgmInterval);
+                    init(); AudioEngine.stopMusic(); bgmPlaying = true;
                     const notes = [262, 330, 392, 523, 440];
                     bgmInterval = setInterval(() => {
                         if (bgmPlaying) playTone(notes[Math.floor(Math.random()*notes.length)], 0.6, 'triangle', musicGain, 0.1);
@@ -467,36 +489,36 @@
         })();
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // GAME ENGINE & VISUALS
+        // GAME ENGINE & VISUALS (FULL RESTORATION)
         // ═══════════════════════════════════════════════════════════════════════════
         const levels = [
             { name: "Jungle", bg: ["#1e4d2b","#2a6b3c"], snakeSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿","🐒"] },
-            { name: "Desert", bg: ["#7a5c28","#c4892d"], snakeSpeed: 3.2, mushroomRate: 1400, env: ["🌵","🏜️","🐪"] },
-            { name: "Mountains", bg: ["#3c4a5c","#5a7090"], snakeSpeed: 3.7, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"] },
-            { name: "Forest", bg: ["#1a3320","#2d5c38"], snakeSpeed: 4.2, mushroomRate: 1200, env: ["🌲","🍂","🦌"] },
-            { name: "Swamp", bg: ["#2a3d20","#4a6b33"], snakeSpeed: 4.7, mushroomRate: 1100, env: ["🐊","💧","🪵"] },
-            { name: "Cave", bg: ["#1a1a2e","#2a2a4e"], snakeSpeed: 5.2, mushroomRate: 1000, env: ["🪨","🦇","💎"] },
-            { name: "Beach", bg: ["#1a6b8a","#2a9bc4"], snakeSpeed: 5.7, mushroomRate: 900, env: ["🏖️","🐚","🌊"] },
-            { name: "Snow", bg: ["#3a5a7a","#5a8aaa"], snakeSpeed: 6.2, mushroomRate: 800, env: ["❄️","🐻"] },
-            { name: "Volcano", bg: ["#5c1a0a","#8b2a12"], snakeSpeed: 6.8, mushroomRate: 700, env: ["🌋","🔥"] },
+            { name: "Desert", bg: ["#7a5c28","#c4892d"], snakeSpeed: 3.3, mushroomRate: 1400, env: ["🌵","🏜️","🐪"] },
+            { name: "Mountains", bg: ["#3c4a5c","#5a7090"], snakeSpeed: 3.8, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"] },
+            { name: "Forest", bg: ["#1a3320","#2d5c38"], snakeSpeed: 4.3, mushroomRate: 1200, env: ["🌲","🍂","🦌"] },
+            { name: "Swamp", bg: ["#2a3d20","#4a6b33"], snakeSpeed: 4.8, mushroomRate: 1100, env: ["🐊","💧","🪵"] },
+            { name: "Cave", bg: ["#1a1a2e","#2a2a4e"], snakeSpeed: 5.3, mushroomRate: 1000, env: ["🪨","🦇","💎"] },
+            { name: "Beach", bg: ["#1a6b8a","#2a9bc4"], snakeSpeed: 5.8, mushroomRate: 900, env: ["🏖️","🐚","🌊"] },
+            { name: "Snow", bg: ["#3a5a7a","#5a8aaa"], snakeSpeed: 6.3, mushroomRate: 800, env: ["❄️","🏂","🐻"] },
+            { name: "Volcano", bg: ["#5c1a0a","#8b2a12"], snakeSpeed: 6.8, mushroomRate: 700, env: ["🌋","🔥","🦎"] },
             { name: "Sky", bg: ["#1a3a6a","#2a5aaa"], snakeSpeed: 7.5, mushroomRate: 600, env: ["☁️","🌈","🦅"] }
         ];
 
         let gameState = {
             currentLevel: 1, score: 0, mushroomsCollected: 0, lives: 3,
-            playerName: "Parrot", parrotColor: "#4CAF50", isPlaying: false,
-            keys: {}, lastMushroomTime: Date.now(), mushroomMultiplier: 1.0
+            playerName: "Parrot", parrotColor: "#4CAF50", isPlaying: false, isPaused: false,
+            keys: {}, lastMushroomTime: Date.now(), mushroomMultiplier: 1.0, rewardsUnlocked: 0
         };
 
         let parrot = { x: 80, y: 310, width: 40, height: 35, vY: 0, jumping: false, wingAnim: 0 };
         let snake = { x: 850, y: 310, speed: 3 };
-        let mushrooms = [], environments = [], floatingTexts = [];
+        let mushrooms = [], environments = [], floatingTexts = [], obstacles = [];
         let gameLoop, spawnTimer;
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // ── Drawing ──
+        // ── Drawing Logic ──
         function drawParrot() {
             ctx.save();
             ctx.fillStyle = gameState.parrotColor;
@@ -504,21 +526,25 @@
             const wingOffset = Math.sin(parrot.wingAnim) * 5;
             ctx.fillStyle = '#2E7D32'; ctx.beginPath(); ctx.ellipse(parrot.x + 14, parrot.y + 22 + wingOffset, 10, 6, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#FF9800'; ctx.beginPath(); ctx.moveTo(parrot.x+40, parrot.y+13); ctx.lineTo(parrot.x+50, parrot.y+11); ctx.lineTo(parrot.x+40, parrot.y+17); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 31, parrot.y + 13, 11, 0, Math.PI * 2); ctx.fill(); 
+            ctx.fillStyle = gameState.parrotColor; ctx.beginPath(); ctx.arc(parrot.x + 31, parrot.y + 13, 11, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 34, parrot.y + 10, 4, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(parrot.x + 35, parrot.y + 10, 2, 0, Math.PI * 2); ctx.fill();
             parrot.wingAnim += 0.2; ctx.restore();
         }
 
         function drawSnake() {
+            ctx.save();
             ctx.fillStyle = '#E64A19'; ctx.beginPath(); ctx.ellipse(snake.x + 20, snake.y + 14, 26, 13, 0, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#BF360C'; ctx.beginPath(); ctx.ellipse(snake.x + 54, snake.y + 14, 14, 13, 0, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = '#FF4081'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(snake.x+67, snake.y+14); ctx.lineTo(snake.x+75, snake.y+12); ctx.stroke();
+            ctx.restore();
         }
 
         function drawMushrooms() {
             mushrooms.forEach(m => {
                 ctx.fillStyle = '#FFF9C4'; ctx.fillRect(m.x+10, m.y+14, 12, 14);
-                ctx.fillStyle = m.color; ctx.beginPath(); ctx.arc(m.x+16, m.y+14, 16, Math.PI, 0); ctx.fill();
+                ctx.fillStyle = '#E91E63'; ctx.beginPath(); ctx.arc(m.x+16, m.y+14, 16, Math.PI, 0); ctx.fill();
                 ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x+10, m.y+8, 3, 0, Math.PI*2); ctx.fill();
             });
         }
@@ -531,41 +557,39 @@
             ctx.font = "24px Arial"; environments.forEach(e => ctx.fillText(e.t, e.x, e.y+30));
         }
 
-        // ── Logic ──
+        // ── Game Logic ──
         function update() {
-            if(!gameState.isPlaying) return;
+            if(!gameState.isPlaying || gameState.isPaused) return;
             ctx.clearRect(0,0,800,400); drawEnv();
 
+            // Controls
             parrot.vY += 0.6; parrot.y += parrot.vY;
             if(parrot.y > 330) { parrot.y = 330; parrot.vY = 0; parrot.jumping = false; }
-            if((gameState.keys['Space'] || gameState.keys['KeyW'] || gameState.keys['ArrowUp']) && !parrot.jumping) { 
-                parrot.vY = -12; parrot.jumping = true; AudioEngine.playJump(); 
+            if(gameState.keys['KeyA']) parrot.x = Math.max(0, parrot.x - 5);
+            if(gameState.keys['KeyD']) parrot.x = Math.min(760, parrot.x + 5);
+            if(gameState.keys['KeyS']) parrot.y = Math.min(330, parrot.y + 5);
+            if((gameState.keys['KeyW'] || gameState.keys['Space'] || gameState.keys['ArrowUp']) && !parrot.jumping) { 
+                parrot.vY = (gameState.keys['Space']) ? -14 : -11; parrot.jumping = true; AudioEngine.playJump(); 
             }
 
+            // Objects
             snake.x -= levels[gameState.currentLevel - 1].snakeSpeed; if(snake.x < -150) { snake.x = 850; snake.y = 100 + Math.random()*200; }
-            if(Math.abs(parrot.x - snake.x) < 40 && Math.abs(parrot.y - snake.y) < 30) { 
-                gameState.lives--; AudioEngine.playHit(); snake.x = 850; updateHUD();
+            if(Math.abs(parrot.x - snake.x) < 45 && Math.abs(parrot.y - snake.y) < 30) { 
+                gameState.lives--; AudioEngine.playHit(); snake.x = 850; 
                 if(gameState.lives <= 0) gameOver();
             }
 
             mushrooms.forEach((m, i) => { 
                 m.x -= 3; 
                 if(Math.abs(parrot.x - m.x) < 35 && Math.abs(parrot.y - m.y) < 35) { 
-                    const pts = Math.round(m.val * gameState.mushroomMultiplier);
-                    gameState.score += pts; gameState.mushroomsCollected++; mushrooms.splice(i,1); AudioEngine.playCollect(m.val); updateHUD();
+                    gameState.score += 50; gameState.mushroomsCollected++; mushrooms.splice(i,1); AudioEngine.playCollect(50);
                 }
             });
 
             if(parrot.x > 750) completeLevel();
 
             drawMushrooms(); drawSnake(); drawParrot();
-            requestAnimationFrame(update);
-        }
-
-        function spawnMushroom() {
-            if(!gameState.isPlaying) return;
-            const colors = ['#E91E63', '#9C27B0', '#FF9800'];
-            mushrooms.push({ x: 800, y: 100+Math.random()*200, color: colors[Math.floor(Math.random()*3)], val: 50 });
+            updateHUD(); requestAnimationFrame(update);
         }
 
         function updateHUD() {
@@ -578,13 +602,15 @@
 
         function startGame() {
             AudioEngine.init(); AudioEngine.startMusic(gameState.currentLevel - 1);
-            gameState.isPlaying = true; gameState.lives = 3; mushrooms = []; environments = [];
-            for(let i=0; i<12; i++) environments.push({ x: Math.random()*800, y: Math.random()*50, t: levels[gameState.currentLevel-1].env[0] });
+            gameState.isPlaying = true; gameState.lives = 3; gameState.score = 0; mushrooms = []; environments = [];
+            parrot.x = 80; parrot.y = 310;
+            const lvl = levels[gameState.currentLevel-1];
+            for(let i=0; i<12; i++) environments.push({ x: Math.random()*800, y: Math.random()*50, t: lvl.env[Math.floor(Math.random()*lvl.env.length)] });
             document.getElementById('startMessage').style.display = 'none';
             document.getElementById('gameOverMessage').style.display = 'none';
             document.getElementById('levelCompleteMessage').style.display = 'none';
-            clearInterval(spawnTimer); spawnTimer = setInterval(spawnMushroom, levels[gameState.currentLevel-1].mushroomRate);
-            updateHUD(); update();
+            clearInterval(spawnTimer); spawnTimer = setInterval(() => { if(gameState.isPlaying) mushrooms.push({x:800, y:150+Math.random()*150}); }, lvl.mushroomRate);
+            update();
         }
 
         function gameOver() {
@@ -595,25 +621,20 @@
         }
 
         function completeLevel() {
-            gameState.isPlaying = false; AudioEngine.stopMusic();
-            if(gameState.currentLevel >= 10) { 
-                AudioEngine.playWin(); document.getElementById('winMessage').style.display = 'block'; 
-            } else {
-                AudioEngine.playWin(); document.getElementById('levelCompleteMessage').style.display = 'block';
+            gameState.isPlaying = false; AudioEngine.stopMusic(); AudioEngine.playWin();
+            if(gameState.currentLevel >= 10) { document.getElementById('winMessage').style.display = 'block'; }
+            else { 
+                document.getElementById('levelCompleteMessage').style.display = 'block'; 
                 document.getElementById('levelCompleteText').innerText = `Level ${gameState.currentLevel} cleared!`;
             }
         }
 
-        // ── Events ──
+        // ── Event Listeners ──
         document.getElementById('startButton').addEventListener('click', startGame);
-        document.getElementById('nextLevelButton').addEventListener('click', () => { gameState.currentLevel++; startGame(); });
-        document.getElementById('restartButton').addEventListener('click', () => location.reload());
-        document.getElementById('playAgainButton').addEventListener('click', () => location.reload());
-
         document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
             const cont = document.getElementById('leaderboardContainer');
-            cont.style.display = cont.style.display === 'block' ? 'none' : 'block';
-            const list = document.getElementById('leaderboardList'); list.innerHTML = "Fetching...";
+            cont.style.display = (cont.style.display === 'block') ? 'none' : 'block';
+            const list = document.getElementById('leaderboardList'); list.innerHTML = "Fetching scores...";
             const scores = await getTopScores();
             list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span class="score-val">${s.score}</span></div>`).join('');
         });
@@ -621,13 +642,23 @@
         document.getElementById('saveProfile').addEventListener('click', () => {
             gameState.playerName = document.getElementById('playerName').value || "Parrot";
             gameState.parrotColor = document.getElementById('parrotColor').value || "#4CAF50";
-            alert("Profile synced! 🦜");
+            alert("Profile Synced! 🦜");
         });
 
-        window.addEventListener('keydown', e => gameState.keys[e.code] = true);
-        window.addEventListener('keyup', e => gameState.keys[e.code] = false);
+        document.getElementById('nextLevelButton').addEventListener('click', () => { gameState.currentLevel++; startGame(); });
+        document.getElementById('restartButton').addEventListener('click', () => location.reload());
+        document.getElementById('playAgainButton').addEventListener('click', () => location.reload());
 
-        // Init UI
+        window.addEventListener('keydown', e => { 
+            gameState.keys[e.code] = true; 
+            document.getElementById('key'+e.code.replace('Key',''))?.classList.add('active'); 
+        });
+        window.addEventListener('keyup', e => { 
+            gameState.keys[e.code] = false; 
+            document.getElementById('key'+e.code.replace('Key',''))?.classList.remove('active'); 
+        });
+
+        // Initialize UI
         document.getElementById('startMessage').style.display = 'block';
         drawEnv(); drawParrot();
     </script>
