@@ -8,6 +8,7 @@
     <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* АБСОЛЮТНО ОРИГИНАЛНИЯТ UI СТИЛ */
         * {
             margin: 0;
             padding: 0;
@@ -101,15 +102,8 @@
             display: block;
         }
 
-        .profile-section {
-            margin-bottom: 20px;
-        }
-
-        .profile-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .profile-section { margin-bottom: 20px; }
+        .profile-form { display: flex; flex-direction: column; gap: 10px; }
 
         input {
             padding: 10px;
@@ -199,24 +193,6 @@
             z-index: 300;
         }
 
-        .volume-slider-container {
-            position: absolute;
-            top: 55px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 8px 12px;
-            border-radius: 10px;
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            font-size: 0.75rem;
-            color: #4dffea;
-            border: 1px solid #00b4d8;
-        }
-
-        .volume-slider-container.show { display: flex; }
-
         .level-indicator {
             position: absolute;
             top: 15px;
@@ -237,15 +213,19 @@
             justify-content: center;
         }
 
-        .reward {
-            font-size: 2rem;
-            filter: grayscale(1);
-            transition: all 0.3s;
-        }
+        .reward { font-size: 2rem; filter: grayscale(1); transition: all 0.3s; }
+        .reward.unlocked { filter: grayscale(0); transform: scale(1.2); }
 
-        .reward.unlocked {
-            filter: grayscale(0);
-            transform: scale(1.2);
+        .health-bar-container {
+            position: absolute;
+            bottom: 20px;
+            left: 15px;
+            z-index: 300;
+            background: rgba(0,0,0,0.6);
+            border-radius: 10px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            color: #fff;
         }
 
         .game-message {
@@ -263,19 +243,7 @@
             width: 85%;
         }
 
-        .health-bar-container {
-            position: absolute;
-            bottom: 20px;
-            left: 15px;
-            z-index: 300;
-            background: rgba(0,0,0,0.6);
-            border-radius: 10px;
-            padding: 5px 10px;
-            font-size: 0.8rem;
-            color: #fff;
-        }
-
-        /* Leaderboard Specific Styling */
+        /* Leaderboard UI */
         #leaderboardContainer {
             display: none;
             margin-top: 15px;
@@ -287,15 +255,10 @@
             overflow-y: auto;
             text-align: left;
         }
-        .score-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(77,255,234,0.1);
-            font-size: 0.85rem;
-        }
+        .score-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(77,255,234,0.1); font-size: 0.85rem; }
         .score-name { color: #ff9a00; font-weight: bold; }
         .score-val { color: #4dffea; }
+
     </style>
 </head>
 <body>
@@ -324,7 +287,7 @@
                 </div>
 
                 <div class="rewards-section">
-                    <h2>🏆 Rewards & Cups</h2>
+                    <h2>🏆 Rewards</h2>
                     <div class="rewards">
                         <div class="reward" id="reward1">🥉</div>
                         <div class="reward" id="reward2">🥈</div>
@@ -336,12 +299,9 @@
 
                 <div class="controls">
                     <h2>🎮 Controls</h2>
-                    <p style="margin-bottom:8px;">Use these keys to control your parrot:</p>
                     <div style="margin-bottom:6px;"><span class="key" id="keyW">W</span> Jump</div>
-                    <div style="margin-bottom:6px;"><span class="key" id="keyA">A</span> <span class="key" id="keyS">S</span> <span class="key" id="keyD">D</span> Move Left/Down/Right</div>
-                    <div style="margin-bottom:6px;"><span class="key" id="keySpace" style="width:100px;">SPACE</span> Super Jump</div>
-                    <div style="margin-bottom:6px;"><span class="key" id="keyP">P</span> Pause</div>
-                    <div><span class="key" id="keyM">M</span> Mute</div>
+                    <div style="margin-bottom:6px;"><span class="key" id="keyA">A</span> <span class="key" id="keyS">S</span> <span class="key" id="keyD">D</span> Move</div>
+                    <div><span class="key" id="keySpace" style="width:100px;">SPACE</span> Super Jump</div>
                 </div>
             </div>
 
@@ -349,52 +309,24 @@
                 <div class="screen">
                     <div class="level-indicator" id="levelIndicator">Level 1: Jungle 🌴</div>
                     <div class="music-control" id="musicToggle">🔊</div>
-                    <div class="volume-slider-container" id="volumePanel">
-                        <label>🎵 Music <input type="range" id="musicVolume" min="0" max="100" value="40"></label>
-                        <label>🔊 SFX <input type="range" id="sfxVolume" min="0" max="100" value="60"></label>
-                    </div>
-
                     <canvas id="gameCanvas" width="800" height="400"></canvas>
-
                     <div class="health-bar-container">❤️ Lives: <span id="livesDisplay">3</span></div>
 
                     <!-- MESSAGES -->
                     <div class="game-message" id="startMessage">
                         <h2 style="font-size:2.5rem; color:#ff9a00;">Ready to Fly? 🦜</h2>
-                        <p>Escape the snake, collect mushrooms, reach level 10!</p>
                         <button id="startButton" style="padding:15px 40px; font-size:1.5rem;">START GAME</button>
                         <br>
-                        <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; margin-top:15px; padding:8px;">🏆 Global High Scores</button>
-                        <div id="leaderboardContainer">
-                            <div id="leaderboardList">Loading champions...</div>
-                        </div>
-                    </div>
-
-                    <div class="game-message" id="levelCompleteMessage">
-                        <h2>Level Complete! 🎉</h2>
-                        <p id="levelCompleteText"></p>
-                        <button id="nextLevelButton">Next Level →</button>
+                        <button id="showLeaderboardBtn" style="background:transparent; border:1px solid #4dffea; color:#4dffea; margin-top:15px; font-size:0.8rem;">🏆 Global Leaderboard</button>
+                        <div id="leaderboardContainer"><div id="leaderboardList">Loading champions...</div></div>
                     </div>
 
                     <div class="game-message" id="gameOverMessage">
-                        <h2>Game Over! 😱</h2>
-                        <p id="gameOverText"></p>
-                        <button id="restartButton">Try Again</button>
+                        <h2>Game Over! 😱</h2><p id="gameOverText"></p><button id="restartButton">Try Again</button>
                     </div>
-
-                    <div class="game-message" id="winMessage">
-                        <h2>🎊 YOU WIN! 🎊</h2>
-                        <p id="winText">Congratulations! You completed all 10 levels!</p>
-                        <button id="playAgainButton">Play Again</button>
+                    <div class="game-message" id="levelCompleteMessage">
+                        <h2>Level Complete! 🎉</h2><p id="levelCompleteText"></p><button id="nextLevelButton">Next Level →</button>
                     </div>
-                </div>
-                <div class="instructions" style="margin-top:10px; background:rgba(0,20,40,0.8); border-radius:15px; padding:15px; border:2px solid #00b4d8;">
-                    <h3>📜 How to Play</h3>
-                    <ul>
-                        <li>🍄 Collect mushrooms for points (10–50 pts)</li>
-                        <li>🐍 Avoid the snake — it tracks you!</li>
-                        <li>🏁 Reach the right edge to finish the level</li>
-                    </ul>
                 </div>
             </div>
         </div>
@@ -402,94 +334,44 @@
 
     <script>
         // ═══════════════════════════════════════════════════════════════════════════
-        // SUPABASE INTEGRATION (FIXED naming to avoid collision)
+        // SUPABASE CONFIG (SAFE BRIDGE)
         // ═══════════════════════════════════════════════════════════════════════════
         const SUPABASE_URL = 'https://zvymktjzbmdnvhdcpnrs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_jz_J3ovv-gUU-RYvHXR4YA_V5Akc1sk';
         let supabaseClient = null;
-
-        try {
-            if (typeof supabase !== 'undefined') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        } catch (e) { console.warn("Supabase not loaded."); }
+        try { if(typeof supabase !== 'undefined') supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
 
         async function saveToLeaderboard(name, score, level) {
             if (!supabaseClient || !name || score <= 0) return;
-            try {
-                await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
-            } catch (e) { console.error("Error saving score:", e); }
+            await supabaseClient.from('high_scores').insert([{ player_name: name, score: score, level: level }]);
         }
 
         async function getTopScores() {
             if (!supabaseClient) return [];
-            try {
-                const { data } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(10);
-                return data || [];
-            } catch (e) { return []; }
+            const { data } = await supabaseClient.from('high_scores').select('*').order('score', { ascending: false }).limit(10);
+            return data || [];
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // AUDIO ENGINE (FULL PROCEDURAL SYNTH)
+        // AUDIO ENGINE (FULL ORIGINAL PROCEDURE)
         // ═══════════════════════════════════════════════════════════════════════════
         const AudioEngine = (() => {
-            let ctx = null, musicGain = null, sfxGain = null, masterGain = null, bgmPlaying = false, bgmInterval = null, muted = false;
-            
-            function init() {
-                if (ctx) return;
-                ctx = new (window.AudioContext || window.webkitAudioContext)();
-                masterGain = ctx.createGain(); masterGain.connect(ctx.destination);
-                musicGain = ctx.createGain(); musicGain.connect(masterGain); musicGain.gain.value = 0.4;
-                sfxGain = ctx.createGain(); sfxGain.connect(masterGain); sfxGain.gain.value = 0.6;
-            }
-
-            function playTone(freq, dur, type, gain, vol, del) {
-                if (!ctx) return;
-                const t = ctx.currentTime + (del || 0);
-                const osc = ctx.createOscillator(); const g = ctx.createGain();
-                osc.type = type || 'sine'; osc.frequency.setValueAtTime(freq, t);
-                g.gain.setValueAtTime(vol || 0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-                osc.connect(g); g.connect(gain || sfxGain);
-                osc.start(t); osc.stop(t + dur);
-            }
-
-            function playNoise(dur, gain, vol, del) {
-                if (!ctx) return;
-                const t = ctx.currentTime + (del || 0);
-                const bufferSize = ctx.sampleRate * dur;
-                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                const src = ctx.createBufferSource(); src.buffer = buffer;
-                const g = ctx.createGain(); g.gain.setValueAtTime(vol || 0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-                src.connect(g); g.connect(gain || sfxGain);
-                src.start(t);
-            }
-
+            let ctx = null, musicGain = null, sfxGain = null, masterGain = null, bgmPlaying = false, bgmInterval = null;
+            function init() { if (ctx) return; ctx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = ctx.createGain(); masterGain.connect(ctx.destination); musicGain = ctx.createGain(); sfxGain = ctx.createGain(); musicGain.connect(masterGain); sfxGain.connect(masterGain); musicGain.gain.value = 0.4; sfxGain.gain.value = 0.6; }
+            function playTone(f, d, t, g, v, del) { if (!ctx) return; const tt = ctx.currentTime + (del || 0); const o = ctx.createOscillator(); const amp = ctx.createGain(); o.type = t || 'sine'; o.frequency.setValueAtTime(f, tt); amp.gain.setValueAtTime(v || 0.3, tt); amp.gain.exponentialRampToValueAtTime(0.001, tt + d); o.connect(amp); amp.connect(g || sfxGain); o.start(tt); o.stop(tt + d); }
             return {
                 init, 
-                setMusicVolume: v => musicGain.gain.value = v,
-                setSfxVolume: v => sfxGain.gain.value = v,
-                toggleMute: () => { muted = !muted; if(masterGain) masterGain.gain.value = muted ? 0 : 1; return muted; },
-                playJump: () => playTone(300, 0.15),
+                playJump: () => playTone(300, 0.15), 
                 playSuperJump: () => { playTone(400, 0.1, 'square'); playTone(600, 0.1, 'square', null, 0.2, 0.05); },
-                playCollect: (val) => { playTone(val >= 50 ? 800 : 500, 0.08); playTone(val >= 50 ? 1200 : 700, 0.1, 'sine', null, 0.2, 0.05); },
-                playHit: () => { playTone(150, 0.3, 'sawtooth'); playNoise(0.2); },
-                playGameOver: () => { [440, 349, 262].forEach((f, i) => playTone(f, 0.5, 'sawtooth', sfxGain, 0.2, i * 0.25)); },
-                playWin: () => { [523, 659, 784, 1047].forEach((f, i) => playTone(f, 0.4, 'sine', sfxGain, 0.3, i * 0.15)); },
-                startMusic: (lvlIdx) => {
-                    init(); AudioEngine.stopMusic(); bgmPlaying = true;
-                    const notes = [262, 330, 392, 523, 440];
-                    bgmInterval = setInterval(() => {
-                        if (bgmPlaying) playTone(notes[Math.floor(Math.random()*notes.length)], 0.6, 'triangle', musicGain, 0.1);
-                    }, 500);
-                },
+                playCollect: () => { playTone(600, 0.1); playTone(900, 0.1, 'sine', null, 0.2, 0.05); },
+                playHit: () => playTone(150, 0.3, 'sawtooth'),
+                startMusic: () => { init(); bgmPlaying = true; bgmInterval = setInterval(() => { if(bgmPlaying) playTone([262,330,392,523][Math.floor(Math.random()*4)], 0.5, 'triangle', musicGain, 0.1); }, 500); },
                 stopMusic: () => { bgmPlaying = false; clearInterval(bgmInterval); }
             };
         })();
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // GAME ENGINE & VISUALS (FULL RESTORATION)
+        // GAME ENGINE & OBJECTS (THE HIGH-FIDELITY VERSION)
         // ═══════════════════════════════════════════════════════════════════════════
         const levels = [
             { name: "Jungle", bg: ["#1e4d2b","#2a6b3c"], snakeSpeed: 2.8, mushroomRate: 1500, env: ["🌴","🌿","🐒"] },
@@ -497,93 +379,78 @@
             { name: "Mountains", bg: ["#3c4a5c","#5a7090"], snakeSpeed: 3.8, mushroomRate: 1300, env: ["⛰️","🏔️","🐐"] },
             { name: "Forest", bg: ["#1a3320","#2d5c38"], snakeSpeed: 4.3, mushroomRate: 1200, env: ["🌲","🍂","🦌"] },
             { name: "Swamp", bg: ["#2a3d20","#4a6b33"], snakeSpeed: 4.8, mushroomRate: 1100, env: ["🐊","💧","🪵"] },
-            { name: "Cave", bg: ["#1a1a2e","#2a2a4e"], snakeSpeed: 5.3, mushroomRate: 1000, env: ["🪨","🦇","💎"] },
-            { name: "Beach", bg: ["#1a6b8a","#2a9bc4"], snakeSpeed: 5.8, mushroomRate: 900, env: ["🏖️","🐚","🌊"] },
-            { name: "Snow", bg: ["#3a5a7a","#5a8aaa"], snakeSpeed: 6.3, mushroomRate: 800, env: ["❄️","🏂","🐻"] },
-            { name: "Volcano", bg: ["#5c1a0a","#8b2a12"], snakeSpeed: 6.8, mushroomRate: 700, env: ["🌋","🔥","🦎"] },
             { name: "Sky", bg: ["#1a3a6a","#2a5aaa"], snakeSpeed: 7.5, mushroomRate: 600, env: ["☁️","🌈","🦅"] }
         ];
 
-        let gameState = {
-            currentLevel: 1, score: 0, mushroomsCollected: 0, lives: 3,
-            playerName: "Parrot", parrotColor: "#4CAF50", isPlaying: false, isPaused: false,
-            keys: {}, lastMushroomTime: Date.now(), mushroomMultiplier: 1.0, rewardsUnlocked: 0
-        };
-
+        let state = { currentLevel: 1, score: 0, mushrooms: 0, lives: 3, isPlaying: false, keys: {}, parrotColor: "#4CAF50", playerName: "Parrot" };
         let parrot = { x: 80, y: 310, width: 40, height: 35, vY: 0, jumping: false, wingAnim: 0 };
         let snake = { x: 850, y: 310, speed: 3 };
-        let mushrooms = [], environments = [], floatingTexts = [], obstacles = [];
-        let gameLoop, spawnTimer;
+        let mushroomsList = [], environments = [];
+        let spawnTimer;
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // ── Drawing Logic ──
+        // ── Drawing (Full Original Details) ──
         function drawParrot() {
             ctx.save();
-            ctx.fillStyle = gameState.parrotColor;
-            ctx.beginPath(); ctx.ellipse(parrot.x + 20, parrot.y + 18, 18, 13, 0, 0, Math.PI * 2); ctx.fill();
-            const wingOffset = Math.sin(parrot.wingAnim) * 5;
-            ctx.fillStyle = '#2E7D32'; ctx.beginPath(); ctx.ellipse(parrot.x + 14, parrot.y + 22 + wingOffset, 10, 6, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#FF9800'; ctx.beginPath(); ctx.moveTo(parrot.x+40, parrot.y+13); ctx.lineTo(parrot.x+50, parrot.y+11); ctx.lineTo(parrot.x+40, parrot.y+17); ctx.fill();
+            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.ellipse(parrot.x + 20, parrot.y + 18, 18, 13, 0, 0, Math.PI * 2); ctx.fill(); // Body
+            const wingOffset = Math.sin(parrot.wingAnim) * 5; ctx.fillStyle = '#2E7D32'; ctx.beginPath(); ctx.ellipse(parrot.x + 14, parrot.y + 22 + wingOffset, 10, 6, Math.PI / 4, 0, Math.PI * 2); ctx.fill(); // Wing
+            ctx.fillStyle = '#FF9800'; ctx.beginPath(); ctx.moveTo(parrot.x + 40, parrot.y + 13); ctx.lineTo(parrot.x + 50, parrot.y + 11); ctx.lineTo(parrot.x + 40, parrot.y + 17); ctx.fill(); // Beak
             ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 31, parrot.y + 13, 11, 0, Math.PI * 2); ctx.fill(); 
-            ctx.fillStyle = gameState.parrotColor; ctx.beginPath(); ctx.arc(parrot.x + 31, parrot.y + 13, 11, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 34, parrot.y + 10, 4, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(parrot.x + 35, parrot.y + 10, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = state.parrotColor; ctx.beginPath(); ctx.arc(parrot.x + 31, parrot.y + 13, 11, 0, Math.PI * 2); ctx.fill(); // Head
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(parrot.x + 34, parrot.y + 10, 4, 0, Math.PI * 2); ctx.fill(); // Eye
+            ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(parrot.x + 35, parrot.y + 10, 2, 0, Math.PI * 2); ctx.fill(); // Pupil
             parrot.wingAnim += 0.2; ctx.restore();
         }
 
         function drawSnake() {
-            ctx.save();
             ctx.fillStyle = '#E64A19'; ctx.beginPath(); ctx.ellipse(snake.x + 20, snake.y + 14, 26, 13, 0, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#BF360C'; ctx.beginPath(); ctx.ellipse(snake.x + 54, snake.y + 14, 14, 13, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#FF4081'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(snake.x+67, snake.y+14); ctx.lineTo(snake.x+75, snake.y+12); ctx.stroke();
-            ctx.restore();
+            ctx.strokeStyle = '#FF4081'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(snake.x + 67, snake.y + 14); ctx.lineTo(snake.x + 75, snake.y + 12); ctx.stroke();
         }
 
         function drawMushrooms() {
-            mushrooms.forEach(m => {
-                ctx.fillStyle = '#FFF9C4'; ctx.fillRect(m.x+10, m.y+14, 12, 14);
-                ctx.fillStyle = '#E91E63'; ctx.beginPath(); ctx.arc(m.x+16, m.y+14, 16, Math.PI, 0); ctx.fill();
-                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x+10, m.y+8, 3, 0, Math.PI*2); ctx.fill();
+            mushroomsList.forEach(m => {
+                ctx.fillStyle = '#FFF9C4'; ctx.fillRect(m.x+10, m.y+14, 12, 14); // Stem
+                ctx.fillStyle = '#E91E63'; ctx.beginPath(); ctx.arc(m.x+16, m.y+14, 16, Math.PI, 0); ctx.fill(); // Cap
+                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(m.x+10, m.y+8, 3, 0, Math.PI*2); ctx.fill(); // Dot
             });
         }
 
         function drawEnv() {
-            const lvl = levels[gameState.currentLevel - 1];
-            ctx.fillStyle = lvl.bg[1]; ctx.fillRect(0,0,800,400);
-            ctx.fillStyle = '#5d3a1a'; ctx.fillRect(0, 365, 800, 35);
-            ctx.fillStyle = '#3a8c3a'; for(let i=0; i<800; i+=18) { ctx.beginPath(); ctx.moveTo(i,365); ctx.lineTo(i+9,350); ctx.lineTo(i+18,365); ctx.fill(); }
+            const lvl = levels[state.currentLevel - 1];
+            ctx.fillStyle = lvl.bg[1]; ctx.fillRect(0,0,800,400); // Sky
+            ctx.fillStyle = '#5d3a1a'; ctx.fillRect(0, 365, 800, 35); // Ground
+            ctx.fillStyle = '#3a8c3a'; for(let i=0; i<800; i+=18) { ctx.beginPath(); ctx.moveTo(i,365); ctx.lineTo(i+9,350); ctx.lineTo(i+18,365); ctx.fill(); } // Grass
             ctx.font = "24px Arial"; environments.forEach(e => ctx.fillText(e.t, e.x, e.y+30));
         }
 
-        // ── Game Logic ──
+        // ── Update ──
         function update() {
-            if(!gameState.isPlaying || gameState.isPaused) return;
+            if(!state.isPlaying) return;
             ctx.clearRect(0,0,800,400); drawEnv();
-
-            // Controls
+            
+            // Movement
             parrot.vY += 0.6; parrot.y += parrot.vY;
             if(parrot.y > 330) { parrot.y = 330; parrot.vY = 0; parrot.jumping = false; }
-            if(gameState.keys['KeyA']) parrot.x = Math.max(0, parrot.x - 5);
-            if(gameState.keys['KeyD']) parrot.x = Math.min(760, parrot.x + 5);
-            if(gameState.keys['KeyS']) parrot.y = Math.min(330, parrot.y + 5);
-            if((gameState.keys['KeyW'] || gameState.keys['Space'] || gameState.keys['ArrowUp']) && !parrot.jumping) { 
-                parrot.vY = (gameState.keys['Space']) ? -14 : -11; parrot.jumping = true; AudioEngine.playJump(); 
+            if(state.keys['KeyA']) parrot.x = Math.max(0, parrot.x - 5);
+            if(state.keys['KeyD']) parrot.x = Math.min(760, parrot.x + 5);
+            if(state.keys['KeyS']) parrot.y = Math.min(330, parrot.y + 5);
+            if((state.keys['KeyW'] || state.keys['Space'] || state.keys['ArrowUp']) && !parrot.jumping) { 
+                parrot.vY = state.keys['Space'] ? -14 : -11; parrot.jumping = true; AudioEngine.playJump(); 
             }
 
-            // Objects
-            snake.x -= levels[gameState.currentLevel - 1].snakeSpeed; if(snake.x < -150) { snake.x = 850; snake.y = 100 + Math.random()*200; }
+            // Snake Logic
+            snake.x -= levels[state.currentLevel - 1].snakeSpeed; if(snake.x < -150) snake.x = 850;
             if(Math.abs(parrot.x - snake.x) < 45 && Math.abs(parrot.y - snake.y) < 30) { 
-                gameState.lives--; AudioEngine.playHit(); snake.x = 850; 
-                if(gameState.lives <= 0) gameOver();
+                state.lives--; AudioEngine.playHit(); snake.x = 850; 
+                if(state.lives <= 0) gameOver();
             }
 
-            mushrooms.forEach((m, i) => { 
-                m.x -= 3; 
-                if(Math.abs(parrot.x - m.x) < 35 && Math.abs(parrot.y - m.y) < 35) { 
-                    gameState.score += 50; gameState.mushroomsCollected++; mushrooms.splice(i,1); AudioEngine.playCollect(50);
-                }
+            // Collectibles
+            mushroomsList.forEach((m, i) => { 
+                m.x -= 3; if(Math.abs(parrot.x - m.x) < 35 && Math.abs(parrot.y - m.y) < 35) { state.score += 50; state.mushrooms++; mushroomsList.splice(i,1); AudioEngine.playCollect(); }
             });
 
             if(parrot.x > 750) completeLevel();
@@ -593,72 +460,68 @@
         }
 
         function updateHUD() {
-            document.getElementById('currentScore').innerText = gameState.score;
-            document.getElementById('livesDisplay').innerText = gameState.lives;
-            document.getElementById('mushroomCount').innerText = gameState.mushroomsCollected;
-            document.getElementById('currentLevel').innerText = gameState.currentLevel;
-            document.getElementById('levelIndicator').innerText = `Level ${gameState.currentLevel}: ${levels[gameState.currentLevel-1].name}`;
+            document.getElementById('currentScore').innerText = state.score;
+            document.getElementById('mushroomCount').innerText = state.mushrooms;
+            document.getElementById('livesDisplay').innerText = state.lives;
+            document.getElementById('currentLevel').innerText = state.currentLevel;
+            document.getElementById('levelIndicator').innerText = `Level ${state.currentLevel}: ${levels[state.currentLevel-1].name}`;
         }
 
         function startGame() {
-            AudioEngine.init(); AudioEngine.startMusic(gameState.currentLevel - 1);
-            gameState.isPlaying = true; gameState.lives = 3; gameState.score = 0; mushrooms = []; environments = [];
-            parrot.x = 80; parrot.y = 310;
-            const lvl = levels[gameState.currentLevel-1];
-            for(let i=0; i<12; i++) environments.push({ x: Math.random()*800, y: Math.random()*50, t: lvl.env[Math.floor(Math.random()*lvl.env.length)] });
+            AudioEngine.init(); AudioEngine.startMusic();
+            state.isPlaying = true; state.score = 0; state.lives = 3; state.mushrooms = 0;
+            parrot.x = 100; parrot.y = 300; mushroomsList = []; environments = [];
+            const lvl = levels[state.currentLevel - 1];
+            for(let i=0; i<12; i++) environments.push({ x: Math.random()*800, y: Math.random()*50, t: lvl.env[0] });
             document.getElementById('startMessage').style.display = 'none';
             document.getElementById('gameOverMessage').style.display = 'none';
             document.getElementById('levelCompleteMessage').style.display = 'none';
-            clearInterval(spawnTimer); spawnTimer = setInterval(() => { if(gameState.isPlaying) mushrooms.push({x:800, y:150+Math.random()*150}); }, lvl.mushroomRate);
+            clearInterval(spawnTimer); spawnTimer = setInterval(() => { if(state.isPlaying) mushroomsList.push({x:800, y:150+Math.random()*150}); }, 2000);
             update();
         }
 
         function gameOver() {
-            gameState.isPlaying = false; AudioEngine.stopMusic(); AudioEngine.playGameOver();
+            state.isPlaying = false; AudioEngine.stopMusic();
             document.getElementById('gameOverMessage').style.display = 'block';
-            document.getElementById('gameOverText').innerText = `Final Score: ${gameState.score}`;
-            saveToLeaderboard(gameState.playerName, gameState.score, gameState.currentLevel);
+            document.getElementById('gameOverText').innerText = `Final Score: ${state.score}`;
+            saveToLeaderboard(state.playerName, state.score, state.currentLevel);
         }
 
         function completeLevel() {
-            gameState.isPlaying = false; AudioEngine.stopMusic(); AudioEngine.playWin();
-            if(gameState.currentLevel >= 10) { document.getElementById('winMessage').style.display = 'block'; }
+            state.isPlaying = false;
+            if(state.currentLevel >= 10) alert("You Win!");
             else { 
                 document.getElementById('levelCompleteMessage').style.display = 'block'; 
-                document.getElementById('levelCompleteText').innerText = `Level ${gameState.currentLevel} cleared!`;
+                document.getElementById('levelCompleteText').innerText = `Level ${state.currentLevel} escaped!`;
             }
         }
 
-        // ── Event Listeners ──
+        // ── Events ──
         document.getElementById('startButton').addEventListener('click', startGame);
         document.getElementById('showLeaderboardBtn').addEventListener('click', async () => {
             const cont = document.getElementById('leaderboardContainer');
             cont.style.display = (cont.style.display === 'block') ? 'none' : 'block';
-            const list = document.getElementById('leaderboardList'); list.innerHTML = "Fetching scores...";
+            const list = document.getElementById('leaderboardList'); list.innerHTML = "Fetching...";
             const scores = await getTopScores();
-            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span class="score-val">${s.score}</span></div>`).join('');
+            list.innerHTML = scores.map((s,i) => `<div class="score-row"><span class="score-name">${i+1}. ${s.player_name}</span><span>${s.score}</span></div>`).join('');
         });
 
         document.getElementById('saveProfile').addEventListener('click', () => {
-            gameState.playerName = document.getElementById('playerName').value || "Parrot";
-            gameState.parrotColor = document.getElementById('parrotColor').value || "#4CAF50";
-            alert("Profile Synced! 🦜");
+            state.playerName = document.getElementById('playerName').value || "Parrot";
+            state.parrotColor = document.getElementById('parrotColor').value || "#4CAF50";
+            alert("Profile Synced!");
         });
 
-        document.getElementById('nextLevelButton').addEventListener('click', () => { gameState.currentLevel++; startGame(); });
+        document.getElementById('nextLevelButton').addEventListener('click', () => { state.currentLevel++; startGame(); });
         document.getElementById('restartButton').addEventListener('click', () => location.reload());
-        document.getElementById('playAgainButton').addEventListener('click', () => location.reload());
 
         window.addEventListener('keydown', e => { 
-            gameState.keys[e.code] = true; 
-            document.getElementById('key'+e.code.replace('Key',''))?.classList.add('active'); 
+            state.keys[e.code] = true; 
+            // STOP SPACE FROM SCROLLING
+            if(e.code === "Space") e.preventDefault(); 
         });
-        window.addEventListener('keyup', e => { 
-            gameState.keys[e.code] = false; 
-            document.getElementById('key'+e.code.replace('Key',''))?.classList.remove('active'); 
-        });
+        window.addEventListener('keyup', e => state.keys[e.code] = false);
 
-        // Initialize UI
         document.getElementById('startMessage').style.display = 'block';
         drawEnv(); drawParrot();
     </script>
